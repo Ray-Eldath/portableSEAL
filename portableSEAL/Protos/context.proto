@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+option csharp_namespace = "portableSEAL";
+
+package portableSEAL;
+
+// @formatter:off
+service Context {
+    rpc Create (ContextParameters) returns (Nothing) {}
+    rpc Restore (SerializedContext) returns (Nothing) {}
+
+    rpc Encrypt (EncryptionNecessity) returns (SerializedCiphertext) {}
+    rpc Decrypt (DecryptionNecessity) returns (PlaintextData) {}
+
+    rpc ParseCiphertext (SerializedCiphertext) returns (CiphertextId) {}
+
+    rpc MakePlaintextInt (PlaintextData) returns (PlaintextId) {}
+    rpc MakePlaintextLong (PlaintextData) returns (PlaintextId) {}
+
+    rpc Destroy (Nothing) returns (Nothing) {}
+    
+    //
+    
+    rpc KeyGen (Nothing) returns (KeyPair) {}
+}
+// @formatter:on
+
+message EncryptionNecessity {
+    PlaintextId PlaintextId = 1;
+
+    oneof PublicKey {
+        KeyPairId id = 2;
+        bytes bytes = 3;
+    }
+}
+
+message DecryptionNecessity {
+    CiphertextId CiphertextId = 1;
+
+    oneof PrivateKey {
+        KeyPairId id = 2;
+        bytes bytes = 3;
+    }
+}
+
+message SerializedContext {
+    int32 size = 1;
+    bytes data = 2;
+}
+
+message SerializedCiphertext {
+    int32 size = 1;
+    bytes data = 2;
+}
+
+message PlaintextData {
+    oneof data {
+        sint32 intData = 2;
+        sint64 longData = 3;
+    }
+}
+
+message ContextParameters {
+    repeated uint64 CoeffModulus = 2;
+    uint64 PlainModulus = 3;
+    uint64 PolyModulusDegree = 4;
+
+    bool UseDeflate = 5;
+}
+
+message KeyPair {
+    KeyPairId id = 1;
+
+    bytes PublicKey = 2;
+    bytes PrivateKey = 3;
+}
+
+// id
+message KeyPairId {
+    int32 HashCode = 1;
+}
+
+message PlaintextId {
+    int32 HashCode = 1;
+}
+
+message CiphertextId {
+    int32 HashCode = 1;
+}
+
+// @formatter:off
+message Nothing { }
