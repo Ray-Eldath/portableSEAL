@@ -1,13 +1,16 @@
 syntax = "proto3";
 
-option csharp_namespace = "portableSEAL";
-
 package portableSEAL;
+option csharp_namespace = "portableSEAL.Services";
+
+import "id.proto";
+import "serialization.proto";
 
 // @formatter:off
 service Context {
     rpc Create (ContextParameters) returns (Nothing) {}
     rpc Restore (SerializedContext) returns (Nothing) {}
+    rpc Export (Nothing) returns (SerializedContext) {}
 
     rpc Encrypt (EncryptionNecessity) returns (SerializedCiphertext) {}
     rpc Decrypt (DecryptionNecessity) returns (PlaintextData) {}
@@ -43,16 +46,6 @@ message DecryptionNecessity {
     }
 }
 
-message SerializedContext {
-    int32 size = 1;
-    bytes data = 2;
-}
-
-message SerializedCiphertext {
-    int32 size = 1;
-    bytes data = 2;
-}
-
 message PlaintextData {
     oneof data {
         sint32 intData = 2;
@@ -73,19 +66,6 @@ message KeyPair {
 
     bytes PublicKey = 2;
     bytes PrivateKey = 3;
-}
-
-// id
-message KeyPairId {
-    int32 HashCode = 1;
-}
-
-message PlaintextId {
-    int32 HashCode = 1;
-}
-
-message CiphertextId {
-    int32 HashCode = 1;
 }
 
 // @formatter:off

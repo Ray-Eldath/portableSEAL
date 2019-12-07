@@ -18,32 +18,42 @@ namespace portableSEAL.Services
 
         private readonly Nothing _nothing = new Nothing();
         private SEALContext _context;
+        private MemoryStream _contextParameters;
 
         private Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
         private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
         private Dictionary<int, KeyGenerator> _keyPairMap = new Dictionary<int, KeyGenerator>();
 
-        public override Task<Nothing> Create(ContextParameters request, ServerCallContext context)
-        {
-            var paras = new EncryptionParameters(SchemeType.BFV)
+        public override Task<Nothing> Create(ContextParameters request, ServerCallContext context) =>
+            Task.Run(() =>
             {
-                PolyModulusDegree = request.PolyModulusDegree,
-                CoeffModulus = request.CoeffModulus.Select(e => new SmallModulus(e)),
-                PlainModulus = new SmallModulus(request.PlainModulus)
-            };
-            _context = new SEALContext(paras);
+                var paras = new EncryptionParameters(SchemeType.BFV)
+                {
+                    PolyModulusDegree = request.PolyModulusDegree,
+                    CoeffModulus = request.CoeffModulus.Select(e => new SmallModulus(e)),
+                    PlainModulus = new SmallModulus(request.PlainModulus)
+                };
+                _context = new SEALContext(paras);
 
-            return Task.Run(() => _nothing);
-        }
+                return _nothing;
+            });
 
-        public override Task<Nothing> Restore(SerializedContext request, ServerCallContext context)
-        {
-            var paras = new EncryptionParameters(SchemeType.BFV);
-            paras.Load(ToByteMemoryStream(request.Data));
-            _context = new SEALContext(paras);
 
-            return Task.Run(() => _nothing);
-        }
+        public override Task<Nothing> Restore(SerializedContext request, ServerCallContext context) =>
+            Task.Run(() =>
+            {
+                var paras = new EncryptionParameters(SchemeType.BFV);
+                var stream = ToByteMemoryStream(request.Data);
+                _contextParameters = stream;
+                paras.Load(stream);
+                _context = new SEALContext(paras);
+                return _nothing;
+            });
+
+
+        public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) =>
+            Task.Run(() => new SerializedContext()
+                {Data = ByteString.FromStream(_contextParameters), Size = _contextParameters.Capacity});
 
         public override Task<SerializedCiphertext> Encrypt(EncryptionNecessity request, ServerCallContext context)
         {
@@ -100,10 +110,15 @@ namespace portableSEAL.Services
             });
         }
 
-        public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context)
-        {
-            return base.ParseCiphertext(request, context);
-        }
+        public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context) =>
+            Task.Run(() =>
+            {
+                var ct = new Ciphertext(_context);
+                ct.Load(_context, ToByteMemoryStream(request.Data));
+                var hash = ct.GetHashCode();
+                _ciphertextMap[hash] = ct;
+                return new CiphertextId {HashCode = hash};
+            });
 
         public override Task<PlaintextId> MakePlaintextInt(PlaintextData request, ServerCallContext context)
         {
@@ -118,6 +133,11 @@ namespace portableSEAL.Services
         public override Task<Nothing> Destroy(Nothing request, ServerCallContext context)
         {
             return base.Destroy(request, context);
+        }
+
+        public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context)
+        {
+            return base.KeyGen(request, context);
         }
 
         public ContextService(ILogger<ContextService> logger) => _logger = logger;

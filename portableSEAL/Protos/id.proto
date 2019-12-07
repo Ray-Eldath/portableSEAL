@@ -1,0 +1,16 @@
+﻿syntax = "proto3";
+
+package portableSEAL;
+option csharp_namespace = "portableSEAL.Services";
+
+message KeyPairId {
+    int32 HashCode = 1;
+}
+
+message PlaintextId {
+    int32 HashCode = 1;
+}
+
+message CiphertextId {
+    int32 HashCode = 1;
+}

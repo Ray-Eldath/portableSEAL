@@ -1,0 +1,14 @@
+﻿syntax = "proto3";
+
+package portableSEAL;
+option csharp_namespace = "portableSEAL.Services";
+
+message SerializedContext {
+    int32 size = 1;
+    bytes data = 2;
+}
+
+message SerializedCiphertext {
+    int32 size = 1;
+    bytes data = 2;
+}
