@@ -69,4 +69,4 @@ message KeyPair {
 }
 
 // @formatter:off
-message Nothing { }
+message Nothing {}

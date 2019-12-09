@@ -7,8 +7,9 @@ using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Research.SEAL;
+using portableSEAL.Services;
 
-namespace portableSEAL.Services
+namespace Server.Services
 {
     // TODO: 参数校验：oneof 检查 None；检查 _context 是否初始化等
 
@@ -17,12 +18,14 @@ namespace portableSEAL.Services
         private readonly ILogger<ContextService> _logger;
 
         private readonly Nothing _nothing = new Nothing();
+        private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
         private SEALContext _context;
         private MemoryStream _contextParameters;
+        private Dictionary<int, KeyGenerator> _keyPairMap = new Dictionary<int, KeyGenerator>();
 
         private Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
-        private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
-        private Dictionary<int, KeyGenerator> _keyPairMap = new Dictionary<int, KeyGenerator>();
+
+        public ContextService(ILogger<ContextService> logger) => _logger = logger;
 
         public override Task<Nothing> Create(ContextParameters request, ServerCallContext context) =>
             Task.Run(() =>
@@ -139,8 +142,6 @@ namespace portableSEAL.Services
         {
             return base.KeyGen(request, context);
         }
-
-        public ContextService(ILogger<ContextService> logger) => _logger = logger;
 
         private static MemoryStream ToByteMemoryStream(ByteString bytes) => new MemoryStream(bytes.ToByteArray());
     }

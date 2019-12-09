@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "portableSEAL", "portableSEAL\portableSEAL.csproj", "{E327EBDC-8FEC-4A43-9E84-69C46E554692}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{E327EBDC-8FEC-4A43-9E84-69C46E554692}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{768A13E5-0AE9-4A71-9FA5-BAFC008E431B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +14,9 @@ Global
 		{E327EBDC-8FEC-4A43-9E84-69C46E554692}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E327EBDC-8FEC-4A43-9E84-69C46E554692}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E327EBDC-8FEC-4A43-9E84-69C46E554692}.Release|Any CPU.Build.0 = Release|Any CPU
+		{768A13E5-0AE9-4A71-9FA5-BAFC008E431B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{768A13E5-0AE9-4A71-9FA5-BAFC008E431B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{768A13E5-0AE9-4A71-9FA5-BAFC008E431B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{768A13E5-0AE9-4A71-9FA5-BAFC008E431B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
