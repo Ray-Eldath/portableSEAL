@@ -8,8 +8,8 @@ import "serialization.proto";
 
 // @formatter:off
 service Context {
-    rpc Create (ContextParameters) returns (Nothing) {}
-    rpc Restore (SerializedContext) returns (Nothing) {}
+    rpc Create (ContextParameters) returns (ContextId) {}
+    rpc Restore (SerializedContext) returns (ContextId) {}
     rpc Export (Nothing) returns (SerializedContext) {}
 
     rpc Encrypt (EncryptionNecessity) returns (SerializedCiphertext) {}
@@ -54,8 +54,6 @@ message ContextParameters {
     repeated uint64 CoeffModulus = 2;
     uint64 PlainModulus = 3;
     uint64 PolyModulusDegree = 4;
-
-    bool UseDeflate = 5;
 }
 
 message KeyPair {

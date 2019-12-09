@@ -17,9 +17,10 @@ namespace Server.Services
     {
         private readonly ILogger<ContextService> _logger;
 
+        private const ComprModeType CompressionMode = ComprModeType.Deflate;
         private readonly Nothing _nothing = new Nothing();
 
-        private MemoryStream _contextParameters = new MemoryStream();
+        private Stream _contextParameters;
         private SEALContext _context;
         private IntegerEncoder _encoder;
 
@@ -27,7 +28,7 @@ namespace Server.Services
         private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
         private Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
 
-        public override Task<Nothing> Create(ContextParameters request, ServerCallContext context) =>
+        public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) =>
             Task.Run(() =>
             {
                 var coeffModulus = request.CoeffModulus.Count == 0
@@ -40,31 +41,35 @@ namespace Server.Services
                     CoeffModulus = coeffModulus,
                     PlainModulus = new SmallModulus(request.PlainModulus)
                 };
-                paras.Save(_contextParameters);
+                _contextParameters =
+                    new MemoryStream((int) paras.SaveSize(CompressionMode)); // TODO: check if bigger than Int.MAX
+                paras.Save(_contextParameters,
+                    CompressionMode); // TODO: DEFLATE or not? note that gRPC provide compression as well.
+                _contextParameters.Position = 0;
                 _context = new SEALContext(paras);
                 _encoder = new IntegerEncoder(_context);
 
-                return _nothing;
+                return new ContextId {HashCode = _context.GetHashCode()};
             });
 
 
-        public override Task<Nothing> Restore(SerializedContext request, ServerCallContext context) =>
+        public override Task<ContextId> Restore(SerializedContext request, ServerCallContext context) =>
             Task.Run(() =>
             {
                 var paras = new EncryptionParameters(SchemeType.BFV);
                 var stream = ToByteMemoryStream(request.Data);
                 _contextParameters = stream;
+                paras.SaveSize(ComprModeType.None);
                 paras.Load(stream);
                 _context = new SEALContext(paras);
-                return _nothing;
+                return new ContextId {HashCode = _context.GetHashCode()};
             });
 
 
         public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) =>
             Task.Run(() => new SerializedContext
             {
-                Data = ByteString.FromStream(_contextParameters),
-                Size = _contextParameters.Capacity
+                Data = ByteString.FromStream(_contextParameters)
             });
 
         public override Task<Nothing> Destroy(Nothing request, ServerCallContext context)
@@ -98,7 +103,7 @@ namespace Server.Services
                 new Encryptor(_context, pk).Encrypt(_plaintextMap[request.PlaintextId.HashCode], ct);
                 var r = new MemoryStream();
                 ct.Save(r);
-                return new SerializedCiphertext {Data = ByteString.FromStream(r), Size = r.Capacity};
+                return new SerializedCiphertext {Data = ByteString.FromStream(r)};
             });
         }
 
@@ -152,7 +157,7 @@ namespace Server.Services
                 var p = _encoder.Encode(request.Data);
                 var id = p.GetHashCode();
                 _plaintextMap[id] = p;
-                return new PlaintextId() {HashCode = id};
+                return new PlaintextId {HashCode = id};
             });
 
         ////////

@@ -7,6 +7,10 @@ message KeyPairId {
     int32 HashCode = 1;
 }
 
+message ContextId {
+    int32 HashCode = 1;
+}
+
 message PlaintextId {
     int32 HashCode = 1;
 }
