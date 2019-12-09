@@ -47,10 +47,7 @@ message DecryptionNecessity {
 }
 
 message PlaintextData {
-    oneof data {
-        sint32 intData = 2;
-        sint64 longData = 3;
-    }
+    sint64 data = 1;
 }
 
 message ContextParameters {

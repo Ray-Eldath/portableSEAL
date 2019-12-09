@@ -18,25 +18,31 @@ namespace Server.Services
         private readonly ILogger<ContextService> _logger;
 
         private readonly Nothing _nothing = new Nothing();
-        private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
+
+        private MemoryStream _contextParameters = new MemoryStream();
         private SEALContext _context;
-        private MemoryStream _contextParameters;
+        private IntegerEncoder _encoder;
+
         private Dictionary<int, KeyGenerator> _keyPairMap = new Dictionary<int, KeyGenerator>();
-
+        private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
         private Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
-
-        public ContextService(ILogger<ContextService> logger) => _logger = logger;
 
         public override Task<Nothing> Create(ContextParameters request, ServerCallContext context) =>
             Task.Run(() =>
             {
+                var coeffModulus = request.CoeffModulus.Count == 0
+                    ? CoeffModulus.BFVDefault(request.PolyModulusDegree)
+                    : request.CoeffModulus.Select(e => new SmallModulus(e));
+
                 var paras = new EncryptionParameters(SchemeType.BFV)
                 {
                     PolyModulusDegree = request.PolyModulusDegree,
-                    CoeffModulus = request.CoeffModulus.Select(e => new SmallModulus(e)),
+                    CoeffModulus = coeffModulus,
                     PlainModulus = new SmallModulus(request.PlainModulus)
                 };
+                paras.Save(_contextParameters);
                 _context = new SEALContext(paras);
+                _encoder = new IntegerEncoder(_context);
 
                 return _nothing;
             });
@@ -55,8 +61,18 @@ namespace Server.Services
 
 
         public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) =>
-            Task.Run(() => new SerializedContext()
-                {Data = ByteString.FromStream(_contextParameters), Size = _contextParameters.Capacity});
+            Task.Run(() => new SerializedContext
+            {
+                Data = ByteString.FromStream(_contextParameters),
+                Size = _contextParameters.Capacity
+            });
+
+        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context)
+        {
+            return base.Destroy(request, context);
+        }
+
+        ////////
 
         public override Task<SerializedCiphertext> Encrypt(EncryptionNecessity request, ServerCallContext context)
         {
@@ -109,9 +125,11 @@ namespace Server.Services
             {
                 var p = new Plaintext();
                 new Decryptor(_context, sk).Decrypt(ct, p);
-                return new PlaintextData {IntData = p.ToString().GetHashCode()}; // TODO: 暂时还不知道怎么弄。。。
+                return new PlaintextData {Data = _encoder.DecodeInt64(p)};
             });
         }
+
+        ////////
 
         public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context) =>
             Task.Run(() =>
@@ -128,21 +146,23 @@ namespace Server.Services
             return base.MakePlaintextInt(request, context);
         }
 
-        public override Task<PlaintextId> MakePlaintextLong(PlaintextData request, ServerCallContext context)
-        {
-            return base.MakePlaintextLong(request, context);
-        }
+        public override Task<PlaintextId> MakePlaintextLong(PlaintextData request, ServerCallContext context) =>
+            Task.Run(() =>
+            {
+                var p = _encoder.Encode(request.Data);
+                var id = p.GetHashCode();
+                _plaintextMap[id] = p;
+                return new PlaintextId() {HashCode = id};
+            });
 
-        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context)
-        {
-            return base.Destroy(request, context);
-        }
+        ////////
 
         public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context)
         {
             return base.KeyGen(request, context);
         }
 
+        public ContextService(ILogger<ContextService> logger) => _logger = logger;
         private static MemoryStream ToByteMemoryStream(ByteString bytes) => new MemoryStream(bytes.ToByteArray());
     }
 }
