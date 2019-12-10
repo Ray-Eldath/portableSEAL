@@ -28,57 +28,52 @@ namespace Server.Services
         private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
         private Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
 
-        public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) =>
-            Task.Run(() =>
+        public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) => Task.Run(() =>
+        {
+            var coeffModulus = request.CoeffModulus.Count == 0
+                ? CoeffModulus.BFVDefault(request.PolyModulusDegree)
+                : request.CoeffModulus.Select(e => new SmallModulus(e));
+
+            var paras = new EncryptionParameters(SchemeType.BFV)
             {
-                var coeffModulus = request.CoeffModulus.Count == 0
-                    ? CoeffModulus.BFVDefault(request.PolyModulusDegree)
-                    : request.CoeffModulus.Select(e => new SmallModulus(e));
+                PolyModulusDegree = request.PolyModulusDegree,
+                CoeffModulus = coeffModulus,
+                PlainModulus = new SmallModulus(request.PlainModulus)
+            };
+            _contextParameters =
+                new MemoryStream((int) paras.SaveSize(CompressionMode)); // TODO: check if bigger than Int.MAX
+            paras.Save(_contextParameters,
+                CompressionMode); // TODO: DEFLATE or not? note that gRPC provide compression as well.
+            _contextParameters.Position = 0;
+            _context = new SEALContext(paras);
+            _encoder = new IntegerEncoder(_context);
 
-                var paras = new EncryptionParameters(SchemeType.BFV)
-                {
-                    PolyModulusDegree = request.PolyModulusDegree,
-                    CoeffModulus = coeffModulus,
-                    PlainModulus = new SmallModulus(request.PlainModulus)
-                };
-                _contextParameters =
-                    new MemoryStream((int) paras.SaveSize(CompressionMode)); // TODO: check if bigger than Int.MAX
-                paras.Save(_contextParameters,
-                    CompressionMode); // TODO: DEFLATE or not? note that gRPC provide compression as well.
-                _contextParameters.Position = 0;
-                _context = new SEALContext(paras);
-                _encoder = new IntegerEncoder(_context);
-
-                return new ContextId {HashCode = _context.GetHashCode()};
-            });
+            return new ContextId {HashCode = paras.GetHashCode()}; // be careful when use GetHashCode...
+        });
 
 
-        public override Task<ContextId> Restore(SerializedContext request, ServerCallContext context) =>
-            Task.Run(() =>
-            {
-                var paras = new EncryptionParameters(SchemeType.BFV);
-                var stream = ToByteMemoryStream(request.Data);
-                _contextParameters = stream;
-                paras.SaveSize(ComprModeType.None);
-                paras.Load(stream);
-                _context = new SEALContext(paras);
-                return new ContextId {HashCode = _context.GetHashCode()};
-            });
+        public override Task<ContextId> Restore(SerializedContext request, ServerCallContext context) => Task.Run(() =>
+        {
+            var paras = new EncryptionParameters(SchemeType.BFV);
+            var stream = ToByteMemoryStream(request.Data);
+            _contextParameters = stream;
+            paras.Load(stream);
+            _context = new SEALContext(paras);
+            return new ContextId {HashCode = paras.GetHashCode()};
+        });
 
 
-        public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) =>
-            Task.Run(() =>
-                new SerializedContext {Data = ByteString.FromStream(_contextParameters)});
+        public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) => Task.Run(() =>
+            new SerializedContext {Data = ToByteString(_contextParameters)});
 
-        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context) =>
-            Task.Run(() =>
-            {
-                _plaintextMap.Clear();
-                _ciphertextMap.Clear();
-                _keyPairMap.Clear();
-                _context = null;
-                return _nothing;
-            });
+        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context) => Task.Run(() =>
+        {
+            _plaintextMap.Clear();
+            _ciphertextMap.Clear();
+            _keyPairMap.Clear();
+            _context = null;
+            return _nothing;
+        });
 
         ////////
 
@@ -87,11 +82,11 @@ namespace Server.Services
             var pk = new PublicKey();
             switch (request.PublicKeyCase)
             {
-                case EncryptionNecessity.PublicKeyOneofCase.Bytes:
-                    pk.Load(_context, ToByteMemoryStream(request.Bytes));
+                case EncryptionNecessity.PublicKeyOneofCase.PublicKeyBytes:
+                    pk.Load(_context, ToByteMemoryStream(request.PublicKeyBytes));
                     break;
-                case EncryptionNecessity.PublicKeyOneofCase.Id:
-                    pk = _keyPairMap[request.Id.HashCode].PublicKey;
+                case EncryptionNecessity.PublicKeyOneofCase.PublicKeyId:
+                    pk = _keyPairMap[request.PublicKeyId.HashCode].PublicKey;
                     break;
                 case EncryptionNecessity.PublicKeyOneofCase.None:
                     // TODO
@@ -104,9 +99,12 @@ namespace Server.Services
             {
                 var ct = new Ciphertext(_context);
                 new Encryptor(_context, pk).Encrypt(_plaintextMap[request.PlaintextId.HashCode], ct);
-                var r = new MemoryStream();
-                ct.Save(r);
-                return new SerializedCiphertext {Data = ByteString.FromStream(r)};
+                // 无可奈何的三部曲
+                var r = new MemoryStream((int) ct.SaveSize(CompressionMode));
+                ct.Save(r, CompressionMode);
+                r.Position = 0;
+                // 无可奈何的三部曲 —— 终结
+                return new SerializedCiphertext {Data = ToByteString(r)};
             });
         }
 
@@ -114,15 +112,15 @@ namespace Server.Services
         {
             var ct = _ciphertextMap[request.CiphertextId.HashCode];
             var sk = new SecretKey();
-            switch (request.PrivateKeyCase)
+            switch (request.SecretKeyCase)
             {
-                case DecryptionNecessity.PrivateKeyOneofCase.Bytes:
-                    sk.Load(_context, ToByteMemoryStream(request.Bytes));
+                case DecryptionNecessity.SecretKeyOneofCase.SecretKeyBytes:
+                    sk.Load(_context, ToByteMemoryStream(request.SecretKeyBytes));
                     break;
-                case DecryptionNecessity.PrivateKeyOneofCase.Id:
-                    sk = _keyPairMap[request.Id.HashCode].SecretKey;
+                case DecryptionNecessity.SecretKeyOneofCase.SecretKeyId:
+                    sk = _keyPairMap[request.SecretKeyId.HashCode].SecretKey;
                     break;
-                case DecryptionNecessity.PrivateKeyOneofCase.None:
+                case DecryptionNecessity.SecretKeyOneofCase.None:
                     // TODO:
                     break;
                 default:
@@ -160,13 +158,27 @@ namespace Server.Services
 
         ////////
 
-        public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context)
+        public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context) => Task.Run(() =>
         {
-            var keyPair = new KeyGenerator(_context);
-            return base.KeyGen(request, context);
-        }
+            var kp = new KeyGenerator(_context);
+            var hash = kp.GetHashCode();
+            _keyPairMap[hash] = kp;
+            var kpId = new KeyPairId {HashCode = hash};
+
+            var pkStream = new MemoryStream((int) kp.PublicKey.SaveSize(CompressionMode));
+            kp.PublicKey.Save(pkStream, CompressionMode);
+            pkStream.Position = 0;
+
+            var skStream = new MemoryStream((int) kp.SecretKey.SaveSize(CompressionMode));
+            kp.SecretKey.Save(skStream, CompressionMode);
+            skStream.Position = 0;
+
+            return new KeyPair {Id = kpId, PublicKey = ToByteString(pkStream), SecretKey = ToByteString(skStream)};
+        });
 
         public ContextService(ILogger<ContextService> logger) => _logger = logger;
-        private static MemoryStream ToByteMemoryStream(ByteString bytes) => new MemoryStream(bytes.ToByteArray());
+
+        private static ByteString ToByteString(Stream stream) => ByteString.FromStream(stream);
+        private static Stream ToByteMemoryStream(ByteString bytes) => new MemoryStream(bytes.ToByteArray());
     }
 }

@@ -31,17 +31,17 @@ message EncryptionNecessity {
     PlaintextId PlaintextId = 1;
 
     oneof PublicKey {
-        KeyPairId id = 2;
-        bytes bytes = 3;
+        KeyPairId PublicKeyId = 2;
+        bytes PublicKeyBytes = 3;
     }
 }
 
 message DecryptionNecessity {
     CiphertextId CiphertextId = 1;
 
-    oneof PrivateKey {
-        KeyPairId id = 2;
-        bytes bytes = 3;
+    oneof SecretKey {
+        KeyPairId SecretKeyId = 2;
+        bytes SecretKeyBytes = 3;
     }
 }
 
@@ -59,7 +59,7 @@ message KeyPair {
     KeyPairId id = 1;
 
     bytes PublicKey = 2;
-    bytes PrivateKey = 3;
+    bytes SecretKey = 3;
 }
 
 // @formatter:off

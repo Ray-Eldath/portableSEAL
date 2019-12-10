@@ -34,29 +34,49 @@ namespace Tests
             });
 
         [Test]
-        public void TestExportAndRestore() =>
-            Task.Run(async () =>
-            {
-                var serialized = await _service.Export(_nothing, _mockContext);
-                var deserialized = await _service.Restore(serialized, _mockContext);
-                Assert.AreEqual(_contextId, deserialized.HashCode);
-            });
+        public Task TestExportAndRestore() => Task.Run(async () =>
+        {
+            var serialized = await _service.Export(_nothing, _mockContext);
+            var deserialized = await _service.Restore(serialized, _mockContext);
+            Assert.AreEqual(_contextId, deserialized.HashCode);
+        });
 
         [Test]
+        [TearDown]
         public void TestDestroy() =>
             Assert.DoesNotThrow(() => { _service.Destroy(_nothing, _mockContext); });
 
         [Test]
         public void TestKeyGen() =>
-            Assert.DoesNotThrowAsync(async () => { _keyPair = await _service.KeyGen(_nothing, _mockContext); });
+            Assert.DoesNotThrowAsync(async () => _keyPair = await _service.KeyGen(_nothing, _mockContext));
 
         [Test]
-        [TestCaseSource(nameof(MockData.LongSource))]
-        public void TestMakePlaintext(long data) =>
-            Assert.DoesNotThrowAsync(async () =>
-            {
-                await _service.MakePlaintext(new PlaintextData() {Data = data}, _mockContext);
-            });
+        public void TestMakePlaintext(
+            [Random(Min, Max, 5)] [Values(0L, Min, Max)]
+            long data) =>
+            Assert.DoesNotThrow(() => _service.MakePlaintext(new PlaintextData {Data = data}, _mockContext));
+
+        [Test]
+        public Task TestEncryptAndDecrypt(
+            [Random(Min, Max, 5)] [Values(0L, Min, Max)]
+            long data) => Task.Run(async () =>
+        {
+            var plaintext = await _service.MakePlaintext(new PlaintextData {Data = data}, _mockContext);
+            var ciphertextData =
+                await _service.Encrypt(new EncryptionNecessity
+                    {PlaintextId = plaintext, PublicKeyId = _keyPair.Id}, _mockContext);
+
+            var ciphertext = await _service.ParseCiphertext(ciphertextData, _mockContext);
+
+            var p2 =
+                await _service.Decrypt(new DecryptionNecessity
+                    {CiphertextId = ciphertext, SecretKeyId = _keyPair.Id}, _mockContext);
+
+            Assert.AreEqual(p2.Data, data);
+        });
+
+        private const long Min = long.MinValue;
+        private const long Max = long.MaxValue;
 
         [SetUp]
         public void SetUpTest()

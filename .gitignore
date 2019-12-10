@@ -1,6 +1,7 @@
 ﻿bin/
 obj/
 /packages/
+*.DotSettings**
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
