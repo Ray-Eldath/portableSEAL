@@ -17,8 +17,7 @@ service Context {
 
     rpc ParseCiphertext (SerializedCiphertext) returns (CiphertextId) {}
 
-    rpc MakePlaintextInt (PlaintextData) returns (PlaintextId) {}
-    rpc MakePlaintextLong (PlaintextData) returns (PlaintextId) {}
+    rpc MakePlaintext (PlaintextData) returns (PlaintextId) {}
 
     rpc Destroy (Nothing) returns (Nothing) {}
     

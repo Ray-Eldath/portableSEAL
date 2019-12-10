@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
@@ -8,18 +9,20 @@ using Tests.Helpers;
 
 namespace Tests
 {
+    [ExcludeFromCodeCoverage]
     [Author("Ray Eldath")]
     [TestFixture(TestName = "test SEALContext operations")]
     public class TestContextService
     {
         private ServerCallContext _mockContext = MockServerCallContext.Create();
-        private Nothing _nothing = new Nothing();
         private ContextService _service = new ContextService(new NullLogger<ContextService>());
 
-        private int _contextId = 0;
+        private Nothing _nothing = new Nothing();
+
+        private int _contextId;
+        private KeyPair _keyPair;
 
         [Test]
-        [SetUp]
         public void TestCreate() =>
             Assert.DoesNotThrowAsync(async () =>
             {
@@ -31,7 +34,6 @@ namespace Tests
             });
 
         [Test]
-        [Order(1)]
         public void TestExportAndRestore() =>
             Task.Run(async () =>
             {
@@ -39,5 +41,28 @@ namespace Tests
                 var deserialized = await _service.Restore(serialized, _mockContext);
                 Assert.AreEqual(_contextId, deserialized.HashCode);
             });
+
+        [Test]
+        public void TestDestroy() =>
+            Assert.DoesNotThrow(() => { _service.Destroy(_nothing, _mockContext); });
+
+        [Test]
+        public void TestKeyGen() =>
+            Assert.DoesNotThrowAsync(async () => { _keyPair = await _service.KeyGen(_nothing, _mockContext); });
+
+        [Test]
+        [TestCaseSource(nameof(MockData.LongSource))]
+        public void TestMakePlaintext(long data) =>
+            Assert.DoesNotThrowAsync(async () =>
+            {
+                await _service.MakePlaintext(new PlaintextData() {Data = data}, _mockContext);
+            });
+
+        [SetUp]
+        public void SetUpTest()
+        {
+            TestCreate();
+            TestKeyGen();
+        }
     }
 }

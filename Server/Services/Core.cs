@@ -67,15 +67,18 @@ namespace Server.Services
 
 
         public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) =>
-            Task.Run(() => new SerializedContext
-            {
-                Data = ByteString.FromStream(_contextParameters)
-            });
+            Task.Run(() =>
+                new SerializedContext {Data = ByteString.FromStream(_contextParameters)});
 
-        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context)
-        {
-            return base.Destroy(request, context);
-        }
+        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context) =>
+            Task.Run(() =>
+            {
+                _plaintextMap.Clear();
+                _ciphertextMap.Clear();
+                _keyPairMap.Clear();
+                _context = null;
+                return _nothing;
+            });
 
         ////////
 
@@ -146,12 +149,7 @@ namespace Server.Services
                 return new CiphertextId {HashCode = hash};
             });
 
-        public override Task<PlaintextId> MakePlaintextInt(PlaintextData request, ServerCallContext context)
-        {
-            return base.MakePlaintextInt(request, context);
-        }
-
-        public override Task<PlaintextId> MakePlaintextLong(PlaintextData request, ServerCallContext context) =>
+        public override Task<PlaintextId> MakePlaintext(PlaintextData request, ServerCallContext context) =>
             Task.Run(() =>
             {
                 var p = _encoder.Encode(request.Data);
@@ -164,6 +162,7 @@ namespace Server.Services
 
         public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context)
         {
+            var keyPair = new KeyGenerator(_context);
             return base.KeyGen(request, context);
         }
 

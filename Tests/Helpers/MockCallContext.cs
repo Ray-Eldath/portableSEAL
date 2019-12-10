@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace Tests.Helpers
 {
+    [ExcludeFromCodeCoverage]
     public class MockServerCallContext : ServerCallContext
     {
         public Metadata? ResponseHeaders { get; private set; }
