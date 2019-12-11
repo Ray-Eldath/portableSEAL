@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Research.SEAL;
 using portableSEAL.Services;
+using Server.Utils;
+using static Server.Utils.Util;
+using static Server.Utils.Serializer;
 
 namespace Server.Services
 {
@@ -15,16 +17,13 @@ namespace Server.Services
 
     public class ContextService : Context.ContextBase
     {
-        private const ComprModeType CompressionMode = ComprModeType.Deflate;
-        private readonly Nothing _nothing = new Nothing();
-
+        private static SEALContext _context;
+        private static IntegerEncoder _encoder;
         private Stream _contextParameters;
-        private SEALContext _context;
-        private IntegerEncoder _encoder;
 
+        private static Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
+        private static Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
         private Dictionary<int, KeyGenerator> _keyPairMap = new Dictionary<int, KeyGenerator>();
-        private Dictionary<int, Ciphertext> _ciphertextMap = new Dictionary<int, Ciphertext>();
-        private Dictionary<int, Plaintext> _plaintextMap = new Dictionary<int, Plaintext>();
 
         public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) => Task.Run(() =>
         {
@@ -64,13 +63,12 @@ namespace Server.Services
         public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) => Task.Run(() =>
             new SerializedContext {Data = ToByteString(_contextParameters)});
 
-        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context) => Task.Run(() =>
+        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context) => RunNothing(() =>
         {
             _plaintextMap.Clear();
             _ciphertextMap.Clear();
             _keyPairMap.Clear();
             _context = null;
-            return _nothing;
         });
 
         ////////
@@ -86,10 +84,8 @@ namespace Server.Services
                 case EncryptionNecessity.PublicKeyOneofCase.PublicKeyId:
                     pk = _keyPairMap[request.PublicKeyId.HashCode].PublicKey;
                     break;
-                case EncryptionNecessity.PublicKeyOneofCase.None:
-                    // TODO
-                    break;
                 default:
+                    // TODO
                     throw new ArgumentOutOfRangeException();
             }
 
@@ -97,12 +93,8 @@ namespace Server.Services
             {
                 var ct = new Ciphertext(_context);
                 new Encryptor(_context, pk).Encrypt(_plaintextMap[request.PlaintextId.HashCode], ct);
-                // 无可奈何的三部曲
-                var r = new MemoryStream((int) ct.SaveSize(CompressionMode));
-                ct.Save(r, CompressionMode);
-                r.Position = 0;
-                // 无可奈何的三部曲 —— 终结
-                return new SerializedCiphertext {Data = ToByteString(r)};
+
+                return SerializeCiphertext(ct);
             });
         }
 
@@ -118,10 +110,8 @@ namespace Server.Services
                 case DecryptionNecessity.SecretKeyOneofCase.SecretKeyId:
                     sk = _keyPairMap[request.SecretKeyId.HashCode].SecretKey;
                     break;
-                case DecryptionNecessity.SecretKeyOneofCase.None:
-                    // TODO:
-                    break;
                 default:
+                    // TODO
                     throw new ArgumentOutOfRangeException();
             }
 
@@ -130,8 +120,7 @@ namespace Server.Services
                 var p = new Plaintext();
                 var decryptor = new Decryptor(_context, sk);
                 if (decryptor.InvariantNoiseBudget(ct) == 0)
-                    throw new RpcException(new Status(StatusCode.DataLoss, ""),
-                        "zero noise budget indicates corrupted data");
+                    throw NewRpcException(StatusCode.DataLoss, "zero noise budget indicates corrupted data");
                 decryptor.Decrypt(ct, p);
                 return new PlaintextData {Data = _encoder.DecodeInt64(p)};
             });
@@ -142,8 +131,7 @@ namespace Server.Services
         public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context) =>
             Task.Run(() =>
             {
-                var ct = new Ciphertext(_context);
-                ct.Load(_context, ToByteMemoryStream(request.Data));
+                var ct = DeserializeCiphertext(_context, request.Data);
                 var hash = ct.GetHashCode();
                 _ciphertextMap[hash] = ct;
                 return new CiphertextId {HashCode = hash};
@@ -178,10 +166,13 @@ namespace Server.Services
             return new KeyPair {Id = kpId, PublicKey = ToByteString(pkStream), SecretKey = ToByteString(skStream)};
         });
 
+        internal static SEALContext GetContext() => _context;
+        internal static IntegerEncoder GetIntegerEncoder() => _encoder;
+        internal static Ciphertext GetCiphertext(CiphertextId id) => _ciphertextMap[id.HashCode];
+        internal static Plaintext GetPlaintext(PlaintextId id) => _plaintextMap[id.HashCode];
+
+        private const ComprModeType CompressionMode = Serializer.CompressionMode;
         private readonly ILogger<ContextService> _logger;
         public ContextService(ILogger<ContextService> logger) => _logger = logger;
-
-        private static ByteString ToByteString(Stream stream) => ByteString.FromStream(stream);
-        private static Stream ToByteMemoryStream(ByteString bytes) => new MemoryStream(bytes.ToByteArray());
     }
 }
