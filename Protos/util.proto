@@ -1,0 +1,7 @@
+﻿syntax = "proto3";
+
+package portableSEAL;
+option csharp_namespace = "portableSEAL.Services";
+
+// @formatter:off
+message Nothing {}

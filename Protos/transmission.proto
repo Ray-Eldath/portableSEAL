@@ -3,10 +3,23 @@
 package portableSEAL;
 option csharp_namespace = "portableSEAL.Services";
 
+import "id.proto";
+
 message SerializedContext {
     bytes data = 1;
 }
 
 message SerializedCiphertext {
     bytes data = 1;
+}
+
+message PlaintextData {
+    sint64 data = 1;
+}
+
+message KeyPair {
+    KeyPairId id = 1;
+
+    bytes PublicKey = 2;
+    bytes SecretKey = 3;
 }

@@ -1,0 +1,32 @@
+﻿syntax = "proto3";
+
+package portableSEAL;
+option csharp_namespace = "portableSEAL.Services";
+
+import "transmission.proto";
+import "util.proto";
+import "id.proto";
+
+// @formatter:off
+service Evaluator {
+    rpc Create (CiphertextId) returns (Nothing) {}
+    rpc Result (Nothing) returns (SerializedCiphertext) {}
+
+    rpc Add (BinaryOperand) returns (Nothing) {}
+    rpc Sub (BinaryOperand) returns (Nothing) {}
+    rpc Multiply (BinaryOperand) returns (Nothing) {}
+
+    rpc Negate (Nothing) returns (Nothing) {}
+    rpc Relinearize (Nothing) returns (Nothing) {}
+}
+// @formatter:on
+
+message BinaryOperand {
+    oneof Operand {
+        PlaintextData PlaintextData = 1;
+        PlaintextId PlaintextId = 2;
+
+        SerializedCiphertext SerializedCiphertext = 3;
+        CiphertextId CiphertextId = 4;
+    }
+}

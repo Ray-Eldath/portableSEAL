@@ -15,8 +15,6 @@ namespace Server.Services
 
     public class ContextService : Context.ContextBase
     {
-        private readonly ILogger<ContextService> _logger;
-
         private const ComprModeType CompressionMode = ComprModeType.Deflate;
         private readonly Nothing _nothing = new Nothing();
 
@@ -130,7 +128,11 @@ namespace Server.Services
             return Task.Run(() =>
             {
                 var p = new Plaintext();
-                new Decryptor(_context, sk).Decrypt(ct, p);
+                var decryptor = new Decryptor(_context, sk);
+                if (decryptor.InvariantNoiseBudget(ct) == 0)
+                    throw new RpcException(new Status(StatusCode.DataLoss, ""),
+                        "zero noise budget indicates corrupted data");
+                decryptor.Decrypt(ct, p);
                 return new PlaintextData {Data = _encoder.DecodeInt64(p)};
             });
         }
@@ -176,6 +178,7 @@ namespace Server.Services
             return new KeyPair {Id = kpId, PublicKey = ToByteString(pkStream), SecretKey = ToByteString(skStream)};
         });
 
+        private readonly ILogger<ContextService> _logger;
         public ContextService(ILogger<ContextService> logger) => _logger = logger;
 
         private static ByteString ToByteString(Stream stream) => ByteString.FromStream(stream);

@@ -3,8 +3,9 @@ syntax = "proto3";
 package portableSEAL;
 option csharp_namespace = "portableSEAL.Services";
 
+import "transmission.proto";
+import "util.proto";
 import "id.proto";
-import "serialization.proto";
 
 // @formatter:off
 service Context {
@@ -45,22 +46,8 @@ message DecryptionNecessity {
     }
 }
 
-message PlaintextData {
-    sint64 data = 1;
-}
-
 message ContextParameters {
     repeated uint64 CoeffModulus = 2;
     uint64 PlainModulus = 3;
     uint64 PolyModulusDegree = 4;
 }
-
-message KeyPair {
-    KeyPairId id = 1;
-
-    bytes PublicKey = 2;
-    bytes SecretKey = 3;
-}
-
-// @formatter:off
-message Nothing {}
