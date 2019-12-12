@@ -53,7 +53,10 @@ message DecryptionNecessity {
 }
 
 message ContextParameters {
-    repeated uint64 CoeffModulus = 2;
-    uint64 PlainModulus = 3;
-    uint64 PolyModulusDegree = 4;
+    repeated sint32 CoeffModulus = 20;
+    oneof PlainModulus {
+        uint64 PlainModulusNumber = 30;
+        sint32 PlainModulusBitSize = 31;
+    }
+    uint64 PolyModulusDegree = 40;
 }

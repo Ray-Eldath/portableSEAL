@@ -27,16 +27,25 @@ namespace Server.Services
 
         public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) => Task.Run(() =>
         {
+            var degree = request.PolyModulusDegree;
             var coeffModulus = request.CoeffModulus == null || request.CoeffModulus.Count == 0
                 ? CoeffModulus.BFVDefault(request.PolyModulusDegree)
-                : request.CoeffModulus.Select(e => new SmallModulus(e));
+                : CoeffModulus.Create(degree, request.CoeffModulus.AsEnumerable());
+
+            var plainModulus = request.PlainModulusCase switch
+            {
+                ContextParameters.PlainModulusOneofCase.PlainModulusNumber
+                => new SmallModulus(request.PlainModulusNumber),
+                ContextParameters.PlainModulusOneofCase.PlainModulusBitSize
+                => PlainModulus.Batching(degree, request.PlainModulusBitSize),
+                ContextParameters.PlainModulusOneofCase.None
+                => throw NewRpcException(StatusCode.InvalidArgument, "must provide PlainModulus(Data/BitSize)"),
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             var paras = new EncryptionParameters(SchemeType.BFV)
-            {
-                PolyModulusDegree = request.PolyModulusDegree,
-                CoeffModulus = coeffModulus,
-                PlainModulus = new SmallModulus(request.PlainModulus)
-            };
+                {PolyModulusDegree = degree, CoeffModulus = coeffModulus, PlainModulus = plainModulus};
+
             _contextParameters =
                 new MemoryStream((int) paras.SaveSize(CompressionMode)); // TODO: check if bigger than Int.MAX
             paras.Save(_contextParameters,

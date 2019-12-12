@@ -29,7 +29,7 @@ namespace Tests
             {
                 _contextId = (await _service.Create(new ContextParameters()
                 {
-                    PlainModulus = 1024,
+                    PlainModulusNumber = 1024,
                     PolyModulusDegree = 4096
                 }, _mockContext)).HashCode;
                 Console.WriteLine("contextId: {0}", _contextId);
@@ -59,7 +59,7 @@ namespace Tests
 
         [Test]
         public void TestMakePlaintext(
-            [Random(Min + 1, Max - 1, 5)] [Values(0L, Min, Max)]
+            [Random(Min + 1, Max - 1, 3)] [Values(0L, Min, Max)]
             long data) =>
             Assert.DoesNotThrow(() =>
             {
@@ -69,7 +69,7 @@ namespace Tests
 
         [Test]
         public Task TestEncryptAndDecrypt(
-            [Random(Min + 1, Max - 1, 5)] [Values(0L, Min, Max)]
+            [Random(Min + 1, Max - 1, 3)] [Values(0L, Min, Max)]
             long data) => Task.Run(async () =>
         {
             var plaintext = await _service.MakePlaintext(new PlaintextData {Data = data}, _mockContext);
@@ -90,8 +90,7 @@ namespace Tests
             Assert.AreEqual(p2.Plaintext.Data, data);
         });
 
-        private const long Min = long.MinValue;
-        private const long Max = long.MaxValue;
+        private const long Min = long.MinValue, Max = long.MaxValue;
 
         [SetUp]
         public void SetUpTest()
