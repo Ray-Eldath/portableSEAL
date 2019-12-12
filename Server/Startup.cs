@@ -31,6 +31,7 @@ namespace Server
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapGrpcService<ContextService>();
+                endpoints.MapGrpcService<EvaluatorService>();
 
                 endpoints.MapGet("/",
                     async context =>

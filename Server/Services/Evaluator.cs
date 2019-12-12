@@ -84,15 +84,17 @@ namespace Server.Services
                 case BinaryOperand.OperandOneofCase.PlaintextId:
                     pt = ContextService.GetPlaintext(operand.PlaintextId);
                     break;
-                default:
+                case BinaryOperand.OperandOneofCase.None:
                     throw NewRpcException(StatusCode.InvalidArgument, "must provide Plaintext or Ciphertext");
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
 
             if (ct != null) action.Invoke(ct);
             else actionPlain.Invoke(pt);
         }
 
-        private readonly ILogger<ContextService> _logger;
-        public EvaluatorService(ILogger<ContextService> logger) => _logger = logger;
+        private readonly ILogger<EvaluatorService> _logger;
+        public EvaluatorService(ILogger<EvaluatorService> logger) => _logger = logger;
     }
 }

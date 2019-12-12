@@ -29,20 +29,26 @@ service Context {
 // @formatter:on
 
 message EncryptionNecessity {
-    PlaintextId PlaintextId = 1;
+    oneof Plaintext {
+        PlaintextId PlaintextId = 1;
+        PlaintextData PlaintextData = 2;
+    }
 
     oneof PublicKey {
-        KeyPairId PublicKeyId = 2;
-        bytes PublicKeyBytes = 3;
+        KeyPairId PublicKeyId = 10;
+        bytes PublicKeyBytes = 11;
     }
 }
 
 message DecryptionNecessity {
-    CiphertextId CiphertextId = 1;
+    oneof Ciphertext {
+        CiphertextId CiphertextId = 1;
+        SerializedCiphertext SerializedCiphertext = 2;
+    }
 
     oneof SecretKey {
-        KeyPairId SecretKeyId = 2;
-        bytes SecretKeyBytes = 3;
+        KeyPairId SecretKeyId = 10;
+        bytes SecretKeyBytes = 11;
     }
 }
 

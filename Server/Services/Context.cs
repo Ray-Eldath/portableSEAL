@@ -84,15 +84,28 @@ namespace Server.Services
                 case EncryptionNecessity.PublicKeyOneofCase.PublicKeyId:
                     pk = _keyPairMap[request.PublicKeyId.HashCode].PublicKey;
                     break;
-                default:
+                case EncryptionNecessity.PublicKeyOneofCase.None:
                     // TODO
+                    break;
+                default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
+                var ptId = request.PlaintextCase switch
+                {
+                    EncryptionNecessity.PlaintextOneofCase.PlaintextData =>
+                    await MakePlaintext(request.PlaintextData, context),
+                    EncryptionNecessity.PlaintextOneofCase.PlaintextId =>
+                    request.PlaintextId,
+                    EncryptionNecessity.PlaintextOneofCase.None =>
+                    throw NewRpcException(StatusCode.InvalidArgument, "require Plaintext(Id/Data)"),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+
                 var ct = new Ciphertext(_context);
-                new Encryptor(_context, pk).Encrypt(_plaintextMap[request.PlaintextId.HashCode], ct);
+                new Encryptor(_context, pk).Encrypt(_plaintextMap[ptId.HashCode], ct);
 
                 return SerializeCiphertext(ct);
             });
@@ -100,7 +113,6 @@ namespace Server.Services
 
         public override Task<PlaintextData> Decrypt(DecryptionNecessity request, ServerCallContext context)
         {
-            var ct = _ciphertextMap[request.CiphertextId.HashCode];
             var sk = new SecretKey();
             switch (request.SecretKeyCase)
             {
@@ -110,13 +122,25 @@ namespace Server.Services
                 case DecryptionNecessity.SecretKeyOneofCase.SecretKeyId:
                     sk = _keyPairMap[request.SecretKeyId.HashCode].SecretKey;
                     break;
-                default:
+                case DecryptionNecessity.SecretKeyOneofCase.None:
                     // TODO
+                    break;
+                default:
                     throw new ArgumentOutOfRangeException();
             }
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
+                var ctId = request.CiphertextCase switch
+                {
+                    DecryptionNecessity.CiphertextOneofCase.SerializedCiphertext =>
+                    await ParseCiphertext(request.SerializedCiphertext, context),
+                    DecryptionNecessity.CiphertextOneofCase.CiphertextId => request.CiphertextId,
+                    DecryptionNecessity.CiphertextOneofCase.None =>
+                    throw NewRpcException(StatusCode.InvalidArgument, "require Ciphertext(Id/Serialized)"),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+                var ct = GetCiphertext(ctId);
                 var p = new Plaintext();
                 var decryptor = new Decryptor(_context, sk);
                 if (decryptor.InvariantNoiseBudget(ct) == 0)

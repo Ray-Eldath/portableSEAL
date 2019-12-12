@@ -16,4 +16,4 @@ jobs:
     - name: Build with dotnet
       run: dotnet build --configuration Release
     - name: Unit test
-      run: dotnet test
+      run: dotnet test --logger:console;verbosity=detailed
