@@ -13,6 +13,11 @@ message SerializedCiphertext {
     bytes data = 1;
 }
 
+message DecryptionResult {
+    sint32 NoiseBudget = 1;
+    PlaintextData Plaintext = 10;
+}
+
 message PlaintextData {
     sint64 data = 1;
 }

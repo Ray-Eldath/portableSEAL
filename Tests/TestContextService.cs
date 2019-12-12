@@ -84,9 +84,10 @@ namespace Tests
             var p2 =
                 await _service.Decrypt(new DecryptionNecessity
                     {CiphertextId = ciphertext, SecretKeyId = _keyPair.Id}, _mockContext);
-            Console.WriteLine("plaintext #2: {0}", p2.Data);
+            Console.WriteLine("plaintext #2 noise budget: {0}", p2.NoiseBudget);
+            Console.WriteLine("plaintext #2: {0}", p2.Plaintext.Data);
 
-            Assert.AreEqual(p2.Data, data);
+            Assert.AreEqual(p2.Plaintext.Data, data);
         });
 
         private const long Min = long.MinValue;
@@ -97,6 +98,7 @@ namespace Tests
         {
             TestCreate();
             TestKeyGen();
+            Console.WriteLine("---context created");
         }
     }
 }

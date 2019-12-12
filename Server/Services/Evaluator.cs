@@ -32,7 +32,7 @@ namespace Server.Services
             _evaluator = new Microsoft.Research.SEAL.Evaluator(_context);
         });
 
-        public override Task<SerializedCiphertext> Result(Nothing request, ServerCallContext context) =>
+        public override Task<SerializedCiphertext> Current(Nothing request, ServerCallContext context) =>
             Task.Run(() => SerializeCiphertext(_ct));
 
         public override Task<Nothing> Add(BinaryOperand request, ServerCallContext context) => RunNothing(() =>

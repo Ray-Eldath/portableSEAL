@@ -10,7 +10,7 @@ import "id.proto";
 // @formatter:off
 service Evaluator {
     rpc Create (CiphertextId) returns (Nothing) {}
-    rpc Result (Nothing) returns (SerializedCiphertext) {}
+    rpc Current (Nothing) returns (SerializedCiphertext) {}
 
     rpc Add (BinaryOperand) returns (Nothing) {}
     rpc Sub (BinaryOperand) returns (Nothing) {}

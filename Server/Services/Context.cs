@@ -27,7 +27,7 @@ namespace Server.Services
 
         public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) => Task.Run(() =>
         {
-            var coeffModulus = request.CoeffModulus.Count == 0
+            var coeffModulus = request.CoeffModulus == null || request.CoeffModulus.Count == 0
                 ? CoeffModulus.BFVDefault(request.PolyModulusDegree)
                 : request.CoeffModulus.Select(e => new SmallModulus(e));
 
@@ -111,7 +111,7 @@ namespace Server.Services
             });
         }
 
-        public override Task<PlaintextData> Decrypt(DecryptionNecessity request, ServerCallContext context)
+        public override Task<DecryptionResult> Decrypt(DecryptionNecessity request, ServerCallContext context)
         {
             var sk = new SecretKey();
             switch (request.SecretKeyCase)
@@ -143,10 +143,16 @@ namespace Server.Services
                 var ct = GetCiphertext(ctId);
                 var p = new Plaintext();
                 var decryptor = new Decryptor(_context, sk);
-                if (decryptor.InvariantNoiseBudget(ct) == 0)
-                    throw NewRpcException(StatusCode.DataLoss, "zero noise budget indicates corrupted data");
+                var noiseBudget = decryptor.InvariantNoiseBudget(ct);
+                if (noiseBudget <= 0)
+                    throw NewRpcException(StatusCode.DataLoss,
+                        $"zero noise budget indicates corrupted data. current noise budget: {noiseBudget}");
                 decryptor.Decrypt(ct, p);
-                return new PlaintextData {Data = _encoder.DecodeInt64(p)};
+                return new DecryptionResult
+                {
+                    Plaintext = new PlaintextData {Data = _encoder.DecodeInt64(p)},
+                    NoiseBudget = noiseBudget
+                };
             });
         }
 

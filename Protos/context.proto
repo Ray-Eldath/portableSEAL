@@ -14,7 +14,7 @@ service Context {
     rpc Export (Nothing) returns (SerializedContext) {}
 
     rpc Encrypt (EncryptionNecessity) returns (SerializedCiphertext) {}
-    rpc Decrypt (DecryptionNecessity) returns (PlaintextData) {}
+    rpc Decrypt (DecryptionNecessity) returns (DecryptionResult) {}
 
     rpc ParseCiphertext (SerializedCiphertext) returns (CiphertextId) {}
 
