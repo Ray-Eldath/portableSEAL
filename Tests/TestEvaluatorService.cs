@@ -20,29 +20,36 @@ namespace Tests
         private ContextService _context = new ContextService(new NullLogger<ContextService>());
         private KeyPair _keyPair;
 
-        // [Test, Description("test polynomial r( x^2 + x + 4 )")]
-        public void TestRelinearization([Random(SafeMin, SafeMax, 2)] [Values(0, 1L, -1L)]
-            long l) => Assert.DoesNotThrowAsync(async () =>
+        [Test, Description("test polynomial r( x^2 + x + 4 )")]
+        public void TestRelinearizedPolynomial(
+            [Random(SafeMin, SafeMax, 2)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             await _context.Create(new ContextParameters
             {
-                PlainModulusBitSize = 20,
-                PolyModulusDegree = 8192,
-                CoeffModulus = {50, 30, 30, 50, 50}
+                PlainModulusNumber = 512,
+                PolyModulusDegree = 4096,
+                CoeffModulus = {50, 50}
             }, _mockContext);
             //
-            Console.WriteLine("r( {0}^2 + {0} + 4 ): should be {1}", l ^ 2 + l + 4, l);
-            await CreateEvaluator(l);
-            await _evaluator.Add(new BinaryOperand {PlaintextData = new PlaintextData {Data = l}}, _mockContext);
-            _evaluator.Current(_nothing, _mockContext);
+            _keyPair = await _context.KeyGen(_nothing, _mockContext);
+            var expected = l * l + l + 4L;
+            Console.WriteLine("r( {0}^2 + {0} + 4 ): should be {1}", l, expected);
+
+            var ct = await CreateEvaluator(l);
+            await EvaluatorCurrentPlain();
+
+            await _evaluator.Square(_nothing, _mockContext);
+            await _evaluator.Add(NewSerializedCiphertext(ct), _mockContext);
+            await _evaluator.Add(NewPlaintextData(4L), _mockContext);
+
             var a = await EvaluatorCurrentPlain(); // show noise budget
             await CreateEvaluator(a);
             await _evaluator.Relinearize(_nothing, _mockContext);
-            Assert.AreEqual(l, await EvaluatorCurrentPlain());
+            Assert.AreEqual(expected, a);
         });
 
         [Test]
-        public void TestNegate([Random(Min, Max, 2)] [Values(0, 1L, -1L)]
+        public void TestNegate([Random(Min, Max, 1)] [Values(0, 1L, -1L)]
             long l) => Assert.DoesNotThrowAsync(async () =>
         {
             Console.WriteLine("-({0}): should be {1}", l, -l);
@@ -82,7 +89,7 @@ namespace Tests
             await CreateEvaluator(a);
             var excepted = poly.Invoke(a, b);
             Console.WriteLine(a + " " + op + " " + b + ": should be " + excepted);
-            await polyFunc.Invoke(new BinaryOperand {PlaintextData = new PlaintextData {Data = b}}, _mockContext);
+            await polyFunc.Invoke(NewPlaintextData(b), _mockContext);
             Assert.AreEqual(excepted, await EvaluatorCurrentPlain());
         });
 
@@ -98,7 +105,7 @@ namespace Tests
 
         //////
 
-        private Task CreateEvaluator(long initial) => Task.Run(async () =>
+        private Task<SerializedCiphertext> CreateEvaluator(long initial) => Task.Run(async () =>
         {
             var ct = await _context.Encrypt(
                 new EncryptionNecessity
@@ -109,6 +116,7 @@ namespace Tests
 
             await _evaluator.Create(await _context.ParseCiphertext(ct, _mockContext), _mockContext);
             Console.WriteLine("---evaluator created");
+            return ct;
         });
 
         private Task<long> EvaluatorCurrentPlain() => Task.Run(async () =>
@@ -126,6 +134,12 @@ namespace Tests
             }
         );
 
+        private BinaryOperand NewPlaintextData(long d) =>
+            new BinaryOperand {PlaintextData = new PlaintextData {Data = d}};
+
+        private BinaryOperand NewSerializedCiphertext(SerializedCiphertext ct) =>
+            new BinaryOperand {SerializedCiphertext = ct};
+
         private readonly Nothing _nothing = new Nothing();
         private const long Min = long.MinValue, Max = long.MaxValue, SafeMin = int.MinValue, SafeMax = int.MaxValue;
 
@@ -136,7 +150,7 @@ namespace Tests
         public void SetUpTest() => Assert.DoesNotThrowAsync(async () =>
         {
             await _context.Create(
-                new ContextParameters {PlainModulusNumber = 512, PolyModulusDegree = 2048}, _mockContext);
+                new ContextParameters {PlainModulusNumber = 512, PolyModulusDegree = 1024}, _mockContext);
             _keyPair = await _context.KeyGen(_nothing, _mockContext);
             Console.WriteLine("---context created");
         });

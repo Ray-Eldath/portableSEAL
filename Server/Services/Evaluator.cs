@@ -56,6 +56,11 @@ namespace Server.Services
                 pt => _evaluator.MultiplyPlainInplace(_ct, pt));
         });
 
+        public override Task<Nothing> Square(Nothing request, ServerCallContext context) => RunNothing(() =>
+        {
+            _evaluator.SquareInplace(_ct);
+        });
+
         public override Task<Nothing> Negate(Nothing request, ServerCallContext context) => RunNothing(() =>
         {
             _evaluator.NegateInplace(_ct);

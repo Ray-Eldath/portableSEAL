@@ -12,7 +12,7 @@ namespace Tests
 {
     [ExcludeFromCodeCoverage]
     [Author("Ray Eldath")]
-    [TestFixture(TestName = "test SEALContext operations")]
+    [TestFixture(TestName = "test context operations")]
     public class TestContextService
     {
         private ServerCallContext _mockContext = MockServerCallContext.Create();

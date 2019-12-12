@@ -16,6 +16,7 @@ service Evaluator {
     rpc Sub (BinaryOperand) returns (Nothing) {}
     rpc Multiply (BinaryOperand) returns (Nothing) {}
 
+    rpc Square(Nothing) returns (Nothing) {}
     rpc Negate (Nothing) returns (Nothing) {}
     rpc Relinearize (Nothing) returns (Nothing) {}
 }
