@@ -8,7 +8,7 @@ import "util.proto";
 import "id.proto";
 
 // @formatter:off
-service Context {
+service BfvContext {
     rpc Create (ContextParameters) returns (ContextId) {}
     rpc Restore (SerializedContext) returns (ContextId) {}
     rpc Export (Nothing) returns (SerializedContext) {}

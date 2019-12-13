@@ -15,9 +15,9 @@ namespace Tests
     [TestFixture(TestName = "test arithmetical operations")]
     public class TestEvaluatorService
     {
-        private ServerCallContext _mockContext = MockServerCallContext.Create();
-        private EvaluatorService _evaluator = new EvaluatorService(new NullLogger<EvaluatorService>());
-        private ContextService _context = new ContextService(new NullLogger<ContextService>());
+        private readonly ServerCallContext _mockContext = MockServerCallContext.Create();
+        private readonly EvaluatorService _evaluator = new EvaluatorService(new NullLogger<EvaluatorService>());
+        private readonly BfvContextService _context = new BfvContextService(new NullLogger<BfvContextService>());
         private KeyPair _keyPair;
 
         [Test, Description("test polynomial r( x^2 + x + 4 )")]
@@ -44,8 +44,10 @@ namespace Tests
 
             var a = await EvaluatorCurrentPlain(); // show noise budget
             await CreateEvaluator(a);
+            Console.Write("after r: ");
             await _evaluator.Relinearize(_nothing, _mockContext);
-            Assert.AreEqual(expected, a);
+            var aa = await EvaluatorCurrentPlain(true);
+            Assert.AreEqual(expected, aa);
         });
 
         [Test]
@@ -114,12 +116,14 @@ namespace Tests
                     PublicKeyId = _keyPair.Id
                 }, _mockContext);
 
-            await _evaluator.Create(await _context.ParseCiphertext(ct, _mockContext), _mockContext);
+            await _evaluator.Create(await _context.ParseCiphertext(ct, _mockContext),
+                _mockContext); // TODO: combine two operation into a new operation maybe...?
+            // TODO: digression: denote only BFV scheme here
             Console.WriteLine("---evaluator created");
             return ct;
         });
 
-        private Task<long> EvaluatorCurrentPlain() => Task.Run(async () =>
+        private Task<long> EvaluatorCurrentPlain(bool showNoiseBudgetOnly = false) => Task.Run(async () =>
             {
                 var r = await _context.Decrypt(
                     new DecryptionNecessity
@@ -129,15 +133,16 @@ namespace Tests
                     }, _mockContext);
                 Console.WriteLine("plaintext noise budget: {0}", r.NoiseBudget);
                 var rp = r.Plaintext.Data;
-                Console.WriteLine("EvaluatorCurrentPlain: {0}", rp);
+                if (!showNoiseBudgetOnly)
+                    Console.WriteLine("EvaluatorCurrentPlain: {0}", rp);
                 return rp;
             }
         );
 
-        private BinaryOperand NewPlaintextData(long d) =>
+        private static BinaryOperand NewPlaintextData(long d) =>
             new BinaryOperand {PlaintextData = new PlaintextData {Data = d}};
 
-        private BinaryOperand NewSerializedCiphertext(SerializedCiphertext ct) =>
+        private static BinaryOperand NewSerializedCiphertext(SerializedCiphertext ct) =>
             new BinaryOperand {SerializedCiphertext = ct};
 
         private readonly Nothing _nothing = new Nothing();

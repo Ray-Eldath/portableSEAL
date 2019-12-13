@@ -15,10 +15,8 @@ namespace Tests
     [TestFixture(TestName = "test context operations")]
     public class TestContextService
     {
-        private ServerCallContext _mockContext = MockServerCallContext.Create();
-        private ContextService _service = new ContextService(new NullLogger<ContextService>());
-
-        private Nothing _nothing = new Nothing();
+        private readonly ServerCallContext _mockContext = MockServerCallContext.Create();
+        private readonly BfvContextService _service = new BfvContextService(new NullLogger<BfvContextService>());
 
         private int _contextId;
         private KeyPair _keyPair;
@@ -27,7 +25,7 @@ namespace Tests
         public void TestCreate() =>
             Assert.DoesNotThrowAsync(async () =>
             {
-                _contextId = (await _service.Create(new ContextParameters()
+                _contextId = (await _service.Create(new ContextParameters
                 {
                     PlainModulusNumber = 1024,
                     PolyModulusDegree = 4096
@@ -91,6 +89,7 @@ namespace Tests
         });
 
         private const long Min = long.MinValue, Max = long.MaxValue;
+        private readonly Nothing _nothing = new Nothing();
 
         [SetUp]
         public void SetUpTest()

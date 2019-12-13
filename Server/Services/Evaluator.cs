@@ -20,12 +20,12 @@ namespace Server.Services
 
         public override Task<Nothing> Create(CiphertextId request, ServerCallContext context) => RunNothing(() =>
         {
-            _context = ContextService.GetContext();
-            _encoder = ContextService.GetIntegerEncoder();
+            _context = BfvContextService.GetContext();
+            _encoder = BfvContextService.GetIntegerEncoder();
             if (_context == null || _encoder == null)
                 throw NewRpcException(StatusCode.FailedPrecondition,
                     "improperly initialized Context. create a valid Context first");
-            _ct = ContextService.GetCiphertext(request);
+            _ct = BfvContextService.GetCiphertext(request);
             if (_ct == null)
                 throw NewRpcException(StatusCode.NotFound, "nonexistent CiphertextId");
             _generator = new KeyGenerator(_context); // for relinearization only
@@ -81,13 +81,13 @@ namespace Server.Services
                     ct = DeserializeCiphertext(_context, operand.SerializedCiphertext.Data);
                     break;
                 case BinaryOperand.OperandOneofCase.CiphertextId:
-                    ct = ContextService.GetCiphertext(operand.CiphertextId);
+                    ct = BfvContextService.GetCiphertext(operand.CiphertextId);
                     break;
                 case BinaryOperand.OperandOneofCase.PlaintextData:
                     pt = _encoder.Encode(operand.PlaintextData.Data);
                     break;
                 case BinaryOperand.OperandOneofCase.PlaintextId:
-                    pt = ContextService.GetPlaintext(operand.PlaintextId);
+                    pt = BfvContextService.GetPlaintext(operand.PlaintextId);
                     break;
                 case BinaryOperand.OperandOneofCase.None:
                     throw NewRpcException(StatusCode.InvalidArgument, "must provide Plaintext or Ciphertext");

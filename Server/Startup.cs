@@ -30,7 +30,7 @@ namespace Server
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGrpcService<ContextService>();
+                endpoints.MapGrpcService<BfvContextService>();
                 endpoints.MapGrpcService<EvaluatorService>();
 
                 endpoints.MapGet("/",
