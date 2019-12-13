@@ -7,21 +7,21 @@ using NUnit.Framework;
 using portableSEAL.Services;
 using Server.Services;
 using Tests.Helpers;
+using static Tests.Helpers.Constants;
 
 namespace Tests
 {
     [ExcludeFromCodeCoverage]
     [Author("Ray Eldath")]
     [TestFixture(TestName = "test arithmetical operations")]
-    public class TestEvaluatorService
+    public class TestEvaluatorService : AbstractEvaluatorTest
     {
-        private readonly ServerCallContext _mockContext = MockServerCallContext.Create();
         private readonly EvaluatorService _evaluator = new EvaluatorService(new NullLogger<EvaluatorService>());
         private readonly BfvContextService _context = new BfvContextService(new NullLogger<BfvContextService>());
         private KeyPair _keyPair;
 
-        [Test, Description("test polynomial r( x^2 + x + 4 )")]
-        public void TestRelinearizedPolynomial(
+        [Test, Description("evaluate \"straight\" polynomial r( x^2 + x + 4 )")]
+        public void TestRelinearizedStraightPolynomial(
             [Random(SafeMin, SafeMax, 2)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             await _context.Create(new ContextParameters
@@ -107,47 +107,6 @@ namespace Tests
 
         //////
 
-        private Task<SerializedCiphertext> CreateEvaluator(long initial) => Task.Run(async () =>
-        {
-            var ct = await _context.Encrypt(
-                new EncryptionNecessity
-                {
-                    PlaintextData = new PlaintextData {Data = initial},
-                    PublicKeyId = _keyPair.Id
-                }, _mockContext);
-
-            await _evaluator.Create(await _context.ParseCiphertext(ct, _mockContext),
-                _mockContext); // TODO: combine two operation into a new operation maybe...?
-            // TODO: digression: denote only BFV scheme here
-            Console.WriteLine("---evaluator created");
-            return ct;
-        });
-
-        private Task<long> EvaluatorCurrentPlain(bool showNoiseBudgetOnly = false) => Task.Run(async () =>
-            {
-                var r = await _context.Decrypt(
-                    new DecryptionNecessity
-                    {
-                        SerializedCiphertext = await _evaluator.Current(_nothing, _mockContext),
-                        SecretKeyId = _keyPair.Id
-                    }, _mockContext);
-                Console.WriteLine("plaintext noise budget: {0}", r.NoiseBudget);
-                var rp = r.Plaintext.Data;
-                if (!showNoiseBudgetOnly)
-                    Console.WriteLine("EvaluatorCurrentPlain: {0}", rp);
-                return rp;
-            }
-        );
-
-        private static BinaryOperand NewPlaintextData(long d) =>
-            new BinaryOperand {PlaintextData = new PlaintextData {Data = d}};
-
-        private static BinaryOperand NewSerializedCiphertext(SerializedCiphertext ct) =>
-            new BinaryOperand {SerializedCiphertext = ct};
-
-        private readonly Nothing _nothing = new Nothing();
-        private const long Min = long.MinValue, Max = long.MaxValue, SafeMin = int.MinValue, SafeMax = int.MaxValue;
-
         [TearDown]
         public void TearDownTest() => _context.Destroy(_nothing, _mockContext);
 
@@ -159,5 +118,9 @@ namespace Tests
             _keyPair = await _context.KeyGen(_nothing, _mockContext);
             Console.WriteLine("---context created");
         });
+
+        protected override BfvContextService GetContext() => _context;
+        protected override EvaluatorService GetEvaluator() => _evaluator;
+        protected override KeyPair GetKeyPair() => _keyPair;
     }
 }

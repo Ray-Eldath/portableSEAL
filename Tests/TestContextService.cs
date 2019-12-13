@@ -7,6 +7,7 @@ using NUnit.Framework;
 using portableSEAL.Services;
 using Server.Services;
 using Tests.Helpers;
+using static Tests.Helpers.Constants;
 
 namespace Tests
 {
@@ -87,9 +88,6 @@ namespace Tests
 
             Assert.AreEqual(p2.Plaintext.Data, data);
         });
-
-        private const long Min = long.MinValue, Max = long.MaxValue;
-        private readonly Nothing _nothing = new Nothing();
 
         [SetUp]
         public void SetUpTest()
