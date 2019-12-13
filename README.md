@@ -3,3 +3,5 @@
 gRPC binding for [Microsoft SEAL](https://github.com/microsoft/SEAL).
 
 Full unit-tested, see `./Tests` for these tests, one can regard them as examples.
+
+Currently only BFV scheme is supported.

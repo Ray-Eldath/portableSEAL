@@ -18,6 +18,10 @@ namespace Server.Services
         private Ciphertext _ct;
         private Microsoft.Research.SEAL.Evaluator _evaluator;
 
+        public override Task<Nothing> Construct(
+            SerializedCiphertext request, ServerCallContext context) => RunNothing(async () =>
+            await Create(await BfvContextService.ParseCiphertext(request), context));
+
         public override Task<Nothing> Create(CiphertextId request, ServerCallContext context) => RunNothing(() =>
         {
             _context = BfvContextService.GetContext();

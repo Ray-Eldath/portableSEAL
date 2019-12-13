@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Grpc.Core;
 using portableSEAL.Services;
 
 namespace Server.Utils
 {
+    [ExcludeFromCodeCoverage]
     public static class Util
     {
         private static readonly Nothing Nothing = new Nothing();

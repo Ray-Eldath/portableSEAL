@@ -22,7 +22,7 @@ namespace Tests
 
         [Test, Description("evaluate \"straight\" polynomial r( x^2 + x + 4 )")]
         public void TestRelinearizedStraightPolynomial(
-            [Random(SafeMin, SafeMax, 2)] long l) => Assert.DoesNotThrowAsync(async () =>
+            [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             await _context.Create(new ContextParameters
             {
@@ -46,7 +46,7 @@ namespace Tests
             await CreateEvaluator(a);
             Console.Write("after r: ");
             await _evaluator.Relinearize(_nothing, _mockContext);
-            var aa = await EvaluatorCurrentPlain(true);
+            var aa = await EvaluatorCurrentPlain();
             Assert.AreEqual(expected, aa);
         });
 

@@ -17,7 +17,7 @@ namespace Server.Services
     {
         private static SEALContext _context;
         private static IntegerEncoder _encoder;
-        private Stream _contextParameters;
+        private static Stream _contextParameters;
 
         private static readonly Dictionary<int, Ciphertext> CiphertextMap = new Dictionary<int, Ciphertext>();
         private static readonly Dictionary<int, Plaintext> PlaintextMap = new Dictionary<int, Plaintext>();
@@ -169,15 +169,18 @@ namespace Server.Services
 
         ////////
 
-        public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context) =>
+        public static Task<CiphertextId> ParseCiphertext(SerializedCiphertext sc) =>
             Task.Run(() =>
             {
                 AssertContext();
-                var ct = DeserializeCiphertext(_context, request.Data);
+                var ct = DeserializeCiphertext(_context, sc.Data);
                 var hash = ct.GetHashCode();
                 CiphertextMap[hash] = ct;
                 return new CiphertextId {HashCode = hash};
             });
+
+        public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context) =>
+            ParseCiphertext(request);
 
         public override Task<PlaintextId> MakePlaintext(PlaintextData request, ServerCallContext context) =>
             Task.Run(() =>
@@ -210,7 +213,7 @@ namespace Server.Services
             return new KeyPair {Id = kpId, PublicKey = ToByteString(pkStream), SecretKey = ToByteString(skStream)};
         });
 
-        private void AssertContext(string operation = "access")
+        private static void AssertContext(string operation = "access")
         {
             if (_context == null || _contextParameters == null || _encoder == null)
                 throw NewRpcException(StatusCode.FailedPrecondition,

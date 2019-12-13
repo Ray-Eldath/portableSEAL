@@ -12,7 +12,8 @@ namespace Tests.Helpers
         protected abstract EvaluatorService GetEvaluator();
         protected abstract KeyPair GetKeyPair();
 
-        protected Task<long> EvaluatorCurrentPlain(bool showNoiseBudgetOnly = false) => Task.Run(async () =>
+        protected Task<long> EvaluatorCurrentPlain
+            (bool showNoiseBudget = true, bool showPlainData = true, string header = "") => Task.Run(async () =>
         {
             var r = await GetContext().Decrypt(
                 new DecryptionNecessity
@@ -20,14 +21,17 @@ namespace Tests.Helpers
                     SerializedCiphertext = await GetEvaluator().Current(_nothing, _mockContext),
                     SecretKeyId = GetKeyPair().Id
                 }, _mockContext);
-            Console.WriteLine("plaintext noise budget: {0}", r.NoiseBudget);
+            if (showNoiseBudget)
+                Console.WriteLine("plaintext noise budget: {0}", r.NoiseBudget);
             var rp = r.Plaintext.Data;
-            if (!showNoiseBudgetOnly)
-                Console.WriteLine("EvaluatorCurrentPlain: {0}", rp);
+            var h = header == "" ? "" : header + ": ";
+            if (showPlainData)
+                Console.WriteLine("{0}EvaluatorCurrentPlain: {1}", h, rp);
             return rp;
         });
 
-        protected Task<SerializedCiphertext> CreateEvaluator(long initial) => Task.Run(async () =>
+        protected Task<SerializedCiphertext> CreateEvaluator
+            (long initial, bool createEvaluator = true) => Task.Run(async () =>
         {
             var ct = await GetContext().Encrypt(
                 new EncryptionNecessity
@@ -35,10 +39,12 @@ namespace Tests.Helpers
                     PlaintextData = new PlaintextData {Data = initial},
                     PublicKeyId = GetKeyPair().Id
                 }, _mockContext);
+            if (!createEvaluator) return ct;
 
             await GetEvaluator().Create(await GetContext().ParseCiphertext(ct, _mockContext),
                 _mockContext); // TODO: combine two operation into a new operation maybe...?
             Console.WriteLine("---evaluator created");
+
             return ct;
         });
 

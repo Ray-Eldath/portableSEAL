@@ -1,10 +1,12 @@
-﻿using Grpc.Core;
+﻿using System.Diagnostics.CodeAnalysis;
+using Grpc.Core;
 using portableSEAL.Services;
 
 // ReSharper disable InconsistentNaming
 
 namespace Tests.Helpers
 {
+    [ExcludeFromCodeCoverage]
     public static class Constants
     {
         internal const long Min = long.MinValue, Max = long.MaxValue, SafeMin = int.MinValue, SafeMax = int.MaxValue;
