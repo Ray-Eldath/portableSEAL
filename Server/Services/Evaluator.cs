@@ -10,7 +10,7 @@ using Evaluator = portableSEAL.Services.Evaluator;
 
 namespace Server.Services
 {
-    public class EvaluatorService : Evaluator.EvaluatorBase
+    internal class EvaluatorDelegation : Evaluator.EvaluatorBase
     {
         private SEALContext _context;
         private KeyGenerator _generator;
@@ -25,6 +25,7 @@ namespace Server.Services
             if (_context == null || _encoder == null)
                 throw NewRpcException(StatusCode.FailedPrecondition,
                     "improperly initialized Context. create a valid Context first");
+            //
             _ct = BfvContextService.GetCiphertext(request);
             if (_ct == null)
                 throw NewRpcException(StatusCode.NotFound, "nonexistent CiphertextId");
@@ -98,6 +99,43 @@ namespace Server.Services
             if (ct != null) action.Invoke(ct);
             else actionPlain.Invoke(pt);
         }
+
+        private readonly ILogger<EvaluatorService> _logger;
+        public EvaluatorDelegation(ILogger<EvaluatorService> logger) => _logger = logger;
+    }
+
+    public class EvaluatorService : Evaluator.EvaluatorBase
+    {
+        private static EvaluatorDelegation _delegation;
+
+        internal static void SetDelegation(EvaluatorDelegation delegation) => _delegation = delegation;
+
+        public override Task<Nothing> Create(CiphertextId request, ServerCallContext context)
+        {
+            _delegation = new EvaluatorDelegation(_logger);
+            return _delegation.Create(request, context);
+        }
+
+        public override Task<SerializedCiphertext> Current(Nothing request, ServerCallContext context) =>
+            _delegation.Current(request, context);
+
+        public override Task<Nothing> Add(BinaryOperand request, ServerCallContext context) =>
+            _delegation.Add(request, context);
+
+        public override Task<Nothing> Sub(BinaryOperand request, ServerCallContext context) =>
+            _delegation.Sub(request, context);
+
+        public override Task<Nothing> Multiply(BinaryOperand request, ServerCallContext context) =>
+            _delegation.Multiply(request, context);
+
+        public override Task<Nothing> Square(Nothing request, ServerCallContext context) =>
+            _delegation.Square(request, context);
+
+        public override Task<Nothing> Negate(Nothing request, ServerCallContext context) =>
+            _delegation.Negate(request, context);
+
+        public override Task<Nothing> Relinearize(Nothing request, ServerCallContext context) =>
+            _delegation.Relinearize(request, context);
 
         private readonly ILogger<EvaluatorService> _logger;
         public EvaluatorService(ILogger<EvaluatorService> logger) => _logger = logger;

@@ -1,0 +1,24 @@
+﻿syntax = "proto3";
+
+package portableSEAL;
+option csharp_namespace = "portableSEAL.Services.Switcher";
+
+import "util.proto";
+import "id.proto";
+
+// @formatter:off
+service EvaluatorSwitcher {
+    rpc AddNew (CiphertextId) returns (Position) {}
+    
+    rpc Next(Nothing) returns (Position) {}
+    rpc Previous(Nothing) returns (Position) {}
+    
+    rpc At(Position) returns (Nothing) {}
+    
+    rpc Clear(Nothing) returns (Nothing) {}
+}
+// @formatter:on
+
+message Position {
+    sint32 Pos = 1;
+}

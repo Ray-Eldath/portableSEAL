@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Server.Services;
+using Server.Services.Switcher;
 
 namespace Server
 {
@@ -32,6 +33,8 @@ namespace Server
             {
                 endpoints.MapGrpcService<BfvContextService>();
                 endpoints.MapGrpcService<EvaluatorService>();
+
+                endpoints.MapGrpcService<EvaluatorSwitcherService>();
 
                 endpoints.MapGet("/",
                     async context =>
