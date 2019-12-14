@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
@@ -22,12 +23,12 @@ namespace Tests
         private readonly BfvContextService _context = new BfvContextService(new NullLogger<BfvContextService>());
         private KeyPair _keyPair;
 
-        [Test, Description("evaluate \"deep\" polynomial r( x^2 + 3 * (x - 2) + 4 )")]
-        public void TestRelinearizedDeepPolynomial(
+        [Test, Description("evaluate \"deep\" polynomial x^2 + 3 * (x - 2) + 4")]
+        public void TestDeepPolynomial(
             [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             var expected = l * l + 3 * (l - 2) + 4;
-            Console.WriteLine("r( {0}^2 + 3 * ({0} - 2) + 4 ): should be {1}", l, expected);
+            Console.WriteLine("{0}^2 + 3 * ({0} - 2) + 4: should be {1}", l, expected);
 
             var ct = await CreateEvaluator(l, false);
             await _switcher.ConstructNew(ct, _mockContext);
@@ -43,28 +44,24 @@ namespace Tests
             await _evaluator.Multiply(NewPlaintextData(3), _mockContext);
             await _evaluator.Add(NewPlaintextData(4), _mockContext); // part: 3 * (x - 2) + 4 || on 0
             await EvaluatorCurrentPlain(true, header: "1");
-            var t = await _evaluator.Current(_nothing, _mockContext);
+            var t = await _evaluator.GetId(_nothing, _mockContext);
 
             await _switcher.Previous(_nothing, _mockContext);
-            await _evaluator.Add(NewSerializedCiphertext(t), _mockContext);
+            await _evaluator.Add(new BinaryOperand {CiphertextId = t}, _mockContext);
 
-            Assert.AreEqual(expected, await EvaluatorCurrentPlain());
+            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r"));
         });
 
         [TearDown]
-        public void TearDownTest() => Assert.DoesNotThrowAsync(async () =>
-        {
-            await _switcher.Clear(_nothing, _mockContext);
-        });
+        public Task TearDownTest() => _switcher.Clear(_nothing, _mockContext);
 
         [SetUp]
-        public void SetUpTest() => Assert.DoesNotThrowAsync(async () =>
+        public Task SetUpTest() => Task.Run(async () =>
         {
             await _context.Create(new ContextParameters
             {
                 PlainModulusNumber = 512,
-                PolyModulusDegree = 4096,
-                CoeffModulus = {50, 50}
+                PolyModulusDegree = 2048
             }, _mockContext);
             //
             _keyPair = await _context.KeyGen(_nothing, _mockContext);

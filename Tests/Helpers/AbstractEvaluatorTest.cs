@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using portableSEAL.Services;
 using Server.Services;
+using static Server.Utils.Util;
 using static Tests.Helpers.Constants;
 
 namespace Tests.Helpers
 {
+    [ExcludeFromCodeCoverage]
     public abstract class AbstractEvaluatorTest
     {
         protected abstract BfvContextService GetContext();
@@ -15,18 +18,21 @@ namespace Tests.Helpers
         protected Task<long> EvaluatorCurrentPlain
             (bool showNoiseBudget = true, bool showPlainData = true, string header = "") => Task.Run(async () =>
         {
+            var ct = await GetEvaluator().Current(_nothing, _mockContext);
             var r = await GetContext().Decrypt(
                 new DecryptionNecessity
                 {
-                    SerializedCiphertext = await GetEvaluator().Current(_nothing, _mockContext),
+                    SerializedCiphertext = ct,
                     SecretKeyId = GetKeyPair().Id
                 }, _mockContext);
+            if (header != "")
+                Console.WriteLine($"-{header}: ");
             if (showNoiseBudget)
                 Console.WriteLine("plaintext noise budget: {0}", r.NoiseBudget);
             var rp = r.Plaintext.Data;
-            var h = header == "" ? "" : header + ": ";
             if (showPlainData)
-                Console.WriteLine("{0}EvaluatorCurrentPlain: {1}", h, rp);
+                Console.WriteLine("EvaluatorCurrentPlain: {0, -23}||  ciphertext size: {1}",
+                    rp, ToSizeString(ct.CalculateSize()));
             return rp;
         });
 

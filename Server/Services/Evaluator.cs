@@ -16,6 +16,7 @@ namespace Server.Services
         private KeyGenerator _generator;
         private IntegerEncoder _encoder;
         private Ciphertext _ct;
+        private CiphertextId _ctId;
         private Microsoft.Research.SEAL.Evaluator _evaluator;
 
         public override Task<Nothing> Construct(
@@ -30,6 +31,7 @@ namespace Server.Services
                 throw NewRpcException(StatusCode.FailedPrecondition,
                     "improperly initialized Context. create a valid Context first");
             //
+            _ctId = request;
             _ct = BfvContextService.GetCiphertext(request);
             if (_ct == null)
                 throw NewRpcException(StatusCode.NotFound, "nonexistent CiphertextId");
@@ -39,6 +41,9 @@ namespace Server.Services
 
         public override Task<SerializedCiphertext> Current(Nothing request, ServerCallContext context) =>
             Task.Run(() => SerializeCiphertext(_ct));
+
+        public override Task<CiphertextId> GetId(Nothing request, ServerCallContext context) =>
+            Task.Run(() => _ctId);
 
         public override Task<Nothing> Add(BinaryOperand request, ServerCallContext context) => RunNothing(() =>
         {
@@ -114,11 +119,20 @@ namespace Server.Services
 
         internal static void SetDelegation(EvaluatorDelegation delegation) => _delegation = delegation;
 
+        public override Task<Nothing> Construct(SerializedCiphertext request, ServerCallContext context)
+        {
+            _delegation = new EvaluatorDelegation(_logger);
+            return _delegation.Construct(request, context);
+        }
+
         public override Task<Nothing> Create(CiphertextId request, ServerCallContext context)
         {
             _delegation = new EvaluatorDelegation(_logger);
             return _delegation.Create(request, context);
         }
+
+        public override Task<CiphertextId> GetId(Nothing request, ServerCallContext context) =>
+            _delegation.GetId(request, context);
 
         public override Task<SerializedCiphertext> Current(Nothing request, ServerCallContext context) =>
             _delegation.Current(request, context);

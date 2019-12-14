@@ -42,12 +42,10 @@ namespace Tests
             await _evaluator.Add(NewSerializedCiphertext(ct), _mockContext);
             await _evaluator.Add(NewPlaintextData(4L), _mockContext);
 
-            var a = await EvaluatorCurrentPlain(); // show noise budget
+            var a = await EvaluatorCurrentPlain(showPlainData: false); // show noise budget
             await CreateEvaluator(a);
-            Console.Write("after r: ");
             await _evaluator.Relinearize(_nothing, _mockContext);
-            var aa = await EvaluatorCurrentPlain();
-            Assert.AreEqual(expected, aa);
+            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r"));
         });
 
         [Test]
@@ -108,10 +106,10 @@ namespace Tests
         //////
 
         [TearDown]
-        public void TearDownTest() => _context.Destroy(_nothing, _mockContext);
+        public Task TearDownTest() => _context.Destroy(_nothing, _mockContext);
 
         [SetUp]
-        public void SetUpTest() => Assert.DoesNotThrowAsync(async () =>
+        public Task SetUpTest() => Task.Run(async () =>
         {
             await _context.Create(
                 new ContextParameters {PlainModulusNumber = 512, PolyModulusDegree = 1024}, _mockContext);
