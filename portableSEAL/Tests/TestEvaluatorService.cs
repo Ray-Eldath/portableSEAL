@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -13,7 +14,7 @@ namespace Tests
 {
     [ExcludeFromCodeCoverage]
     [Author("Ray Eldath")]
-    [TestFixture(TestName = "test arithmetical operations")]
+    [TestFixture(TestName = "test arithmetical operations, relinearize and straight polynomial computation")]
     public class TestEvaluatorService : AbstractEvaluatorTest
     {
         private readonly EvaluatorService _evaluator = new EvaluatorService(new NullLogger<EvaluatorService>());
@@ -24,6 +25,8 @@ namespace Tests
         public void TestRelinearizedStraightPolynomial(
             [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
+            var sw = new Stopwatch();
+            sw.Start();
             await _context.Create(new ContextParameters
             {
                 PlainModulusNumber = 512,
@@ -36,16 +39,16 @@ namespace Tests
             Console.WriteLine("r( {0}^2 + {0} + 4 ): should be {1}", l, expected);
 
             var ct = await CreateEvaluator(l);
-            await EvaluatorCurrentPlain();
+            await EvaluatorCurrentPlain(sw: sw);
 
             await _evaluator.Square(_nothing, _mockContext);
             await _evaluator.Add(NewSerializedCiphertext(ct), _mockContext);
             await _evaluator.Add(NewPlaintextData(4L), _mockContext);
 
-            var a = await EvaluatorCurrentPlain(showPlainData: false); // show noise budget
+            var a = await EvaluatorCurrentPlain(showPlainData: false, sw: sw); // show noise budget
             await CreateEvaluator(a);
             await _evaluator.Relinearize(_nothing, _mockContext);
-            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r"));
+            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r", sw: sw));
         });
 
         [Test]

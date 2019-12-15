@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using portableSEAL.Services;
@@ -16,7 +17,10 @@ namespace Tests.Helpers
         protected abstract KeyPair GetKeyPair();
 
         protected Task<long> EvaluatorCurrentPlain
-            (bool showNoiseBudget = true, bool showPlainData = true, string header = "") => Task.Run(async () =>
+        (bool showNoiseBudget = true,
+            bool showPlainData = true,
+            string header = "",
+            Stopwatch sw = null) => Task.Run(async () =>
         {
             var ct = await GetEvaluator().Current(_nothing, _mockContext);
             var r = await GetContext().Decrypt(
@@ -25,8 +29,15 @@ namespace Tests.Helpers
                     SerializedCiphertext = ct,
                     SecretKeyId = GetKeyPair().Id
                 }, _mockContext);
+            if (sw != null)
+                Console.Write("[{0, -3}ms] ", sw.ElapsedMilliseconds);
             if (header != "")
-                Console.WriteLine($"-{header}: ");
+            {
+                if (sw == null)
+                    Console.Write("-> ");
+                Console.WriteLine("{0}:", header);
+            }
+
             if (showNoiseBudget)
                 Console.WriteLine("plaintext noise budget: {0}", r.NoiseBudget);
             var rp = r.Plaintext.Data;

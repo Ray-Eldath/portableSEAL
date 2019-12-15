@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -14,7 +15,7 @@ namespace Tests
 {
     [ExcludeFromCodeCoverage]
     [Author("Ray Eldath")]
-    [TestFixture(TestName = "test evaluator switcher")]
+    [TestFixture(TestName = "test evaluator switcher with a deep polynomial")]
     public class TestEvaluatorSwitcherService : AbstractEvaluatorTest
     {
         private readonly ServerCallContext _mockContext = MockServerCallContext.Create();
@@ -27,6 +28,8 @@ namespace Tests
         public void TestDeepPolynomial(
             [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
+            var sw = new Stopwatch();
+            sw.Start();
             var expected = l * l + 3 * (l - 2) + 4;
             Console.WriteLine("{0}^2 + 3 * ({0} - 2) + 4: should be {1}", l, expected);
 
@@ -34,22 +37,22 @@ namespace Tests
             await _switcher.ConstructNew(ct, _mockContext);
 
             await _evaluator.Square(_nothing, _mockContext); // part: x^2 || on 0
-            await EvaluatorCurrentPlain(true, header: "0 squared");
+            await EvaluatorCurrentPlain(true, header: "0 squared", sw: sw);
 
             await _switcher.ConstructNew(ct, _mockContext); // 1
             // await _evaluator.Relinearize(_nothing, _mockContext);
-            await EvaluatorCurrentPlain(false, header: "1 origin");
+            await EvaluatorCurrentPlain(false, header: "1 origin", sw: sw);
 
             await _evaluator.Sub(NewPlaintextData(2), _mockContext);
             await _evaluator.Multiply(NewPlaintextData(3), _mockContext);
             await _evaluator.Add(NewPlaintextData(4), _mockContext); // part: 3 * (x - 2) + 4 || on 0
-            await EvaluatorCurrentPlain(true, header: "1");
+            await EvaluatorCurrentPlain(true, header: "1", sw: sw);
             var t = await _evaluator.GetId(_nothing, _mockContext);
 
             await _switcher.Previous(_nothing, _mockContext);
             await _evaluator.Add(new BinaryOperand {CiphertextId = t}, _mockContext);
 
-            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r"));
+            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r", sw: sw));
         });
 
         [TearDown]

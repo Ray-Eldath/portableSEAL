@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ContentModelStore">
+    <e p="C:\Users\Ray Eldath\.nuget\packages\microsoft.net.test.sdk\16.4.0\build\netcoreapp2.1" t="Include">
+      <e p="Microsoft.NET.Test.Sdk.Program.cs" t="Include" />
+    </e>
+    <e p="C:\Users\Ray Eldath\.nuget\packages\microsoft.research.sealnet\3.4.5\runtimes\win10-x64\native\sealnetnative.dll" t="Include" />
+    <e p="C:\Users\Ray Eldath\.nuget\packages\microsoft.testplatform.testhost\16.4.0\build\netcoreapp2.1\x64\testhost.dll" t="Include" />
+    <e p="C:\Users\Ray Eldath\.nuget\packages\microsoft.testplatform.testhost\16.4.0\build\netcoreapp2.1\x64\testhost.exe" t="Include" />
+    <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\nunit.engine.api.dll" t="Include" />
+    <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\nunit.engine.dll" t="Include" />
+    <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\NUnit3.TestAdapter.dll" t="Include" />
+    <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\NUnit3.TestAdapter.pdb" t="Include" />
     <e p="C:\Users\Ray Eldath\.Rider2019.3\config\scratches" t="IncludeRecursive" />
     <e p="C:\Users\Ray Eldath\.Rider2019.3\system\extResources" t="IncludeRecursive" />
     <e p="C:\Users\Ray Eldath\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_portableSEAL.-186385553.00" t="ExcludeRecursive" />
@@ -14,7 +24,19 @@
         <e p="obj" t="ExcludeRecursive">
           <e p="Debug" t="Include">
             <e p="netcoreapp3.0" t="Include">
+              <e p="Context.cs" t="Include" />
+              <e p="ContextGrpc.cs" t="Include" />
+              <e p="Evaluator.cs" t="Include" />
+              <e p="EvaluatorGrpc.cs" t="Include" />
+              <e p="Id.cs" t="Include" />
+              <e p="IdGrpc.cs" t="Include" />
               <e p="Server.AssemblyInfo.cs" t="Include" />
+              <e p="Switcher.cs" t="Include" />
+              <e p="SwitcherGrpc.cs" t="Include" />
+              <e p="Transmission.cs" t="Include" />
+              <e p="TransmissionGrpc.cs" t="Include" />
+              <e p="Util.cs" t="Include" />
+              <e p="UtilGrpc.cs" t="Include" />
             </e>
           </e>
         </e>
