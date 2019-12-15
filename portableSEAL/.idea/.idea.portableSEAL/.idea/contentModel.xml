@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\Ray Eldath\.Rider2019.3\config\scratches" t="IncludeRecursive" />
+    <e p="C:\Users\Ray Eldath\.Rider2019.3\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\Ray Eldath\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_portableSEAL.-186385553.00" t="ExcludeRecursive" />
+    <e p="C:\Users\Ray Eldath\RiderProjects\portableSEAL\portableSEAL" t="IncludeFlat">
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="portableSEAL.sln" t="IncludeFlat" />
+      <e p="Server" t="IncludeRecursive">
+        <e p="appsettings.Development.json" t="Include" />
+        <e p="appsettings.json" t="Include" />
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp3.0" t="Include">
+              <e p="Server.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="Program.cs" t="Include" />
+        <e p="Properties" t="Include">
+          <e p="launchSettings.json" t="Include" />
+        </e>
+        <e p="Server.csproj" t="IncludeRecursive" />
+        <e p="Services" t="Include">
+          <e p="Context.cs" t="Include" />
+          <e p="Evaluator.cs" t="Include" />
+          <e p="Switcher" t="Include">
+            <e p="Switcher.cs" t="Include" />
+          </e>
+        </e>
+        <e p="Startup.cs" t="Include" />
+        <e p="Utils" t="Include">
+          <e p="Serializer.cs" t="Include" />
+          <e p="Util.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Tests" t="IncludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+        <e p="Helpers" t="Include">
+          <e p="AbstractEvaluatorTest.cs" t="Include" />
+          <e p="Constants.cs" t="Include" />
+          <e p="MockCallContext.cs" t="Include" />
+        </e>
+        <e p="obj" t="ExcludeRecursive">
+          <e p="Debug" t="Include">
+            <e p="netcoreapp3.0" t="Include">
+              <e p="Tests.AssemblyInfo.cs" t="Include" />
+            </e>
+          </e>
+        </e>
+        <e p="TestContextService.cs" t="Include" />
+        <e p="TestEvaluatorService.cs" t="Include" />
+        <e p="TestEvaluatorSwitcherService.cs" t="Include" />
+        <e p="Tests.csproj" t="IncludeRecursive" />
+      </e>
+    </e>
+    <e p="C:\Users\Ray Eldath\RiderProjects\portableSEAL\protos" t="Include">
+      <e p="context.proto" t="Include" />
+      <e p="evaluator.proto" t="Include" />
+      <e p="id.proto" t="Include" />
+      <e p="switcher.proto" t="Include" />
+      <e p="transmission.proto" t="Include" />
+      <e p="util.proto" t="Include" />
+    </e>
+  </component>
+</project>

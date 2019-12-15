@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Protobuf Include="../Protos/*.proto" ProtoRoot="../Protos" GrpcServices="Server"/>
+        <Protobuf Include="../../protos/*.proto" ProtoRoot="../../protos" GrpcServices="Server"/>
     </ItemGroup>
 
     <ItemGroup>
