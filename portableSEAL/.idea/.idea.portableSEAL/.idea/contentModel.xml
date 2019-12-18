@@ -78,7 +78,7 @@
         <e p="Tests.csproj" t="IncludeRecursive" />
       </e>
     </e>
-    <e p="C:\Users\Ray Eldath\RiderProjects\portableSEAL\protos" t="Include">
+    <e p="C:\Users\Ray Eldath\RiderProjects\portableSEAL\proto\src\main\proto" t="Include">
       <e p="context.proto" t="Include" />
       <e p="evaluator.proto" t="Include" />
       <e p="id.proto" t="Include" />

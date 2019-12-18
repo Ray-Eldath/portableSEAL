@@ -2,6 +2,7 @@
 
 package portableSEAL;
 option csharp_namespace = "portableSEAL.Services";
+option java_package = "ray.eldath.portableseal";
 
 import "id.proto";
 

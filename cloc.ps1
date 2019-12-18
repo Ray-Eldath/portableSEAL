@@ -1,1 +1,1 @@
-cloc .\portableSEAL\Tests\**\*.cs .\portableSEAL\Server\**\*.cs .\Protos\
+cloc .\portableSEAL\Tests\**\*.cs .\portableSEAL\Server\**\*.cs .\proto\src .\proto\*.gradle
