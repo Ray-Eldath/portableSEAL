@@ -29,11 +29,12 @@ namespace Tests
             [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             var sw = new Stopwatch();
-            sw.Start();
             var expected = l * l + 3 * (l - 2) + 4;
             Console.WriteLine("{0}^2 + 3 * ({0} - 2) + 4: should be {1}", l, expected);
 
-            var ct = await CreateEvaluator(l, false);
+            sw.Start();
+
+            var ct = await ConstructEvaluator(l, false);
             await _switcher.ConstructNew(ct, _mockContext);
 
             await _evaluator.Square(_nothing, _mockContext); // part: x^2 || on 0
@@ -52,7 +53,9 @@ namespace Tests
             await _switcher.Previous(_nothing, _mockContext);
             await _evaluator.Add(new BinaryOperand {CiphertextId = t}, _mockContext);
 
-            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r", sw: sw));
+            sw.Stop();
+
+            Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "result", sw: sw));
         });
 
         [TearDown]

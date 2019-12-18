@@ -47,7 +47,7 @@ namespace Tests.Helpers
             return rp;
         });
 
-        protected Task<SerializedCiphertext> CreateEvaluator
+        protected Task<SerializedCiphertext> ConstructEvaluator
             (long initial, bool createEvaluator = true) => Task.Run(async () =>
         {
             var ct = await GetContext().Encrypt(

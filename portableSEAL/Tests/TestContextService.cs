@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -71,20 +72,24 @@ namespace Tests
             [Random(Min + 1, Max - 1, 3)] [Values(0L, Min, Max)]
             long data) => Task.Run(async () =>
         {
+            var sw = new Stopwatch();
+            sw.Start();
             var plaintext = await _service.MakePlaintext(new PlaintextData {Data = data}, _mockContext);
+            Console.WriteLine("[{1,-3}ms] plaintext: {0}", plaintext, sw.ElapsedMilliseconds);
+
             var ciphertextData =
                 await _service.Encrypt(new EncryptionNecessity
                     {PlaintextId = plaintext, PublicKeyId = _keyPair.Id}, _mockContext);
-            Console.WriteLine("plaintext: {0}", plaintext);
 
             var ciphertext = await _service.ParseCiphertext(ciphertextData, _mockContext);
-            Console.WriteLine("ciphertext: {0}", ciphertext);
+            Console.WriteLine("[{1,-3}ms] ciphertext: {0}", ciphertext, sw.ElapsedMilliseconds);
 
             var p2 =
                 await _service.Decrypt(new DecryptionNecessity
                     {CiphertextId = ciphertext, SecretKeyId = _keyPair.Id}, _mockContext);
             Console.WriteLine("plaintext #2 noise budget: {0}", p2.NoiseBudget);
-            Console.WriteLine("plaintext #2: {0}", p2.Plaintext.Data);
+            Console.WriteLine("[{1,-3}ms] plaintext #2: {0}", p2.Plaintext.Data, sw.ElapsedMilliseconds);
+            sw.Stop();
 
             Assert.AreEqual(p2.Plaintext.Data, data);
         });

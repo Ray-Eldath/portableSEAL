@@ -26,7 +26,6 @@ namespace Tests
             [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             var sw = new Stopwatch();
-            sw.Start();
             await _context.Create(new ContextParameters
             {
                 PlainModulusNumber = 512,
@@ -38,16 +37,21 @@ namespace Tests
             var expected = l * l + l + 4L;
             Console.WriteLine("r( {0}^2 + {0} + 4 ): should be {1}", l, expected);
 
-            var ct = await CreateEvaluator(l);
+            sw.Start();
+
+            var ct = await ConstructEvaluator(l);
             await EvaluatorCurrentPlain(sw: sw);
 
             await _evaluator.Square(_nothing, _mockContext);
             await _evaluator.Add(NewSerializedCiphertext(ct), _mockContext);
             await _evaluator.Add(NewPlaintextData(4L), _mockContext);
 
-            var a = await EvaluatorCurrentPlain(showPlainData: false, sw: sw); // show noise budget
-            await CreateEvaluator(a);
+            var a = await EvaluatorCurrentPlain(header: "before r", showPlainData: false, sw: sw); // show noise budget
+            await ConstructEvaluator(a); // TODO: must construct a new evaluator before relinearize...?
             await _evaluator.Relinearize(_nothing, _mockContext);
+
+            sw.Stop();
+
             Assert.AreEqual(expected, await EvaluatorCurrentPlain(header: "after r", sw: sw));
         });
 
@@ -56,7 +60,7 @@ namespace Tests
             long l) => Assert.DoesNotThrowAsync(async () =>
         {
             Console.WriteLine("-({0}): should be {1}", l, -l);
-            await CreateEvaluator(l);
+            await ConstructEvaluator(l);
             await _evaluator.Negate(_nothing, _mockContext);
             Assert.AreEqual(-l, await EvaluatorCurrentPlain());
         });
@@ -89,7 +93,7 @@ namespace Tests
             long a, long b
         ) => Task.Run(async () =>
         {
-            await CreateEvaluator(a);
+            await ConstructEvaluator(a);
             var excepted = poly.Invoke(a, b);
             Console.WriteLine(a + " " + op + " " + b + ": should be " + excepted);
             await polyFunc.Invoke(NewPlaintextData(b), _mockContext);
@@ -101,7 +105,7 @@ namespace Tests
             [Random(Min, Max, 2)] [Values(Max, Min, 0L)]
             long initial) => Assert.DoesNotThrowAsync(async () =>
         {
-            await CreateEvaluator(initial);
+            await ConstructEvaluator(initial);
             var r = await EvaluatorCurrentPlain();
             Assert.AreEqual(initial, r);
         });

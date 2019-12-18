@@ -1,1 +1,1 @@
-cloc .\Tests\**\*.cs .\Server\**\*.cs .\Protos\
+cloc .\portableSEAL\Tests\**\*.cs .\portableSEAL\Server\**\*.cs .\Protos\
