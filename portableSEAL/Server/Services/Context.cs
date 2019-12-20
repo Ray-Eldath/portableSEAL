@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Research.SEAL;
 using portableSEAL.Services;
 using Server.Utils;
+using static Server.Services.ContextParametersHolder;
 using static Server.Utils.Util;
 using static Server.Utils.Serializer;
 
@@ -15,15 +16,9 @@ namespace Server.Services
 {
     public class BfvContextService : BfvContext.BfvContextBase
     {
-        private static SEALContext _context;
-        private static IntegerEncoder _encoder;
-        private static Stream _contextParameters;
+        #region Instance
 
-        private static readonly Dictionary<int, Ciphertext> CiphertextMap = new Dictionary<int, Ciphertext>();
-        private static readonly Dictionary<int, Plaintext> PlaintextMap = new Dictionary<int, Plaintext>();
-        private readonly Dictionary<int, KeyGenerator> _keyPairMap = new Dictionary<int, KeyGenerator>();
-
-        public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) => Task.Run(() =>
+        public override Task<ContextId> Create(ContextParameters request, ServerCallContext context) => SafeRun(() =>
         {
             var degree = request.PolyModulusDegree;
             var coeffModulus = request.CoeffModulus == null || request.CoeffModulus.Count == 0
@@ -44,44 +39,46 @@ namespace Server.Services
             var paras = new EncryptionParameters(SchemeType.BFV)
                 {PolyModulusDegree = degree, CoeffModulus = coeffModulus, PlainModulus = plainModulus};
 
-            _contextParameters =
-                new MemoryStream((int) paras.SaveSize(CompressionMode)); // TODO: check if bigger than Int.MAX
-            paras.Save(_contextParameters,
+            ContextParametersStream = new MemoryStream((int) paras.SaveSize(CompressionMode));
+            paras.Save(ContextParametersStream,
                 CompressionMode); // TODO: DEFLATE or not? note that gRPC provide compression as well.
-            _contextParameters.Position = 0;
-            _context = new SEALContext(paras);
-            _encoder = new IntegerEncoder(_context);
+            ContextParametersStream.Position = 0;
+            Context = new SEALContext(paras);
+            Encoder = new IntegerEncoder(Context);
 
             return new ContextId {HashCode = paras.GetHashCode()}; // be careful when use GetHashCode...
         });
 
 
-        public override Task<ContextId> Restore(SerializedContext request, ServerCallContext context) => Task.Run(() =>
+        public override Task<ContextId> Restore(SerializedContext request, ServerCallContext context) => SafeRun(() =>
         {
             var paras = new EncryptionParameters(SchemeType.BFV);
             var stream = ToByteMemoryStream(request.Data);
-            _contextParameters = stream;
+            ContextParametersStream = stream;
             paras.Load(stream);
-            _context = new SEALContext(paras);
+            Context = new SEALContext(paras);
             return new ContextId {HashCode = paras.GetHashCode()};
         });
 
 
-        public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) => Task.Run(() =>
+        public override Task<SerializedContext> Export(Nothing request, ServerCallContext context) => SafeRun(() =>
         {
             AssertContext("Export");
-            return new SerializedContext {Data = ToByteString(_contextParameters)};
+            return new SerializedContext {Data = ToByteString(ContextParametersStream)};
         });
 
-        public override Task<Nothing> Destroy(Nothing request, ServerCallContext context) => RunNothing(() =>
+        public static void Clear()
         {
-            PlaintextMap.Clear();
-            CiphertextMap.Clear();
-            _keyPairMap.Clear();
-            _context = null;
-        });
+            Plaintexts.Clear();
+            Ciphertexts.Clear();
+            KeyPairs.Clear();
+        }
 
-        ////////
+        public override Task<Nothing> Clear(Nothing request, ServerCallContext context) => SafeRunNothing(Clear);
+
+        #endregion
+
+        #region Cryptography
 
         public override Task<SerializedCiphertext> Encrypt(EncryptionNecessity request, ServerCallContext context)
         {
@@ -90,10 +87,10 @@ namespace Server.Services
             switch (request.PublicKeyCase)
             {
                 case EncryptionNecessity.PublicKeyOneofCase.PublicKeyBytes:
-                    pk.Load(_context, ToByteMemoryStream(request.PublicKeyBytes));
+                    pk.Load(Context, ToByteMemoryStream(request.PublicKeyBytes));
                     break;
                 case EncryptionNecessity.PublicKeyOneofCase.PublicKeyId:
-                    pk = GetOrThrow("PublicKeyId", _keyPairMap, request.PublicKeyId.HashCode).PublicKey;
+                    pk = GetOrThrow("PublicKeyId", KeyPairs, request.PublicKeyId.HashCode).PublicKey;
                     break;
                 case EncryptionNecessity.PublicKeyOneofCase.None:
                     throw NewRpcException(StatusCode.InvalidArgument, "require PublicKey(Bytes/Id)");
@@ -101,7 +98,7 @@ namespace Server.Services
                     throw new ArgumentOutOfRangeException();
             }
 
-            return Task.Run(async () =>
+            return SafeRunAsync(async () =>
             {
                 var ptId = request.PlaintextCase switch
                 {
@@ -114,8 +111,8 @@ namespace Server.Services
                     _ => throw new ArgumentOutOfRangeException()
                 };
 
-                var ct = new Ciphertext(_context);
-                new Encryptor(_context, pk).Encrypt(PlaintextMap[ptId.HashCode], ct);
+                var ct = new Ciphertext(Context);
+                new Encryptor(Context, pk).Encrypt(Plaintexts[ptId.HashCode], ct);
 
                 return SerializeCiphertext(ct);
             });
@@ -128,10 +125,10 @@ namespace Server.Services
             switch (request.SecretKeyCase)
             {
                 case DecryptionNecessity.SecretKeyOneofCase.SecretKeyBytes:
-                    sk.Load(_context, ToByteMemoryStream(request.SecretKeyBytes));
+                    sk.Load(Context, ToByteMemoryStream(request.SecretKeyBytes));
                     break;
                 case DecryptionNecessity.SecretKeyOneofCase.SecretKeyId:
-                    sk = GetOrThrow("SecretKeyId", _keyPairMap, request.SecretKeyId.HashCode).SecretKey;
+                    sk = GetOrThrow("SecretKeyId", KeyPairs, request.SecretKeyId.HashCode).SecretKey;
                     break;
                 case DecryptionNecessity.SecretKeyOneofCase.None:
                     throw NewRpcException(StatusCode.InvalidArgument, "require SecretKey(Bytes/Id)");
@@ -139,7 +136,7 @@ namespace Server.Services
                     throw new ArgumentOutOfRangeException();
             }
 
-            return Task.Run(async () =>
+            return SafeRunAsync(async () =>
             {
                 var ctId = request.CiphertextCase switch
                 {
@@ -153,7 +150,7 @@ namespace Server.Services
                 };
                 var ct = GetCiphertext(ctId);
                 var p = new Plaintext();
-                var decryptor = new Decryptor(_context, sk);
+                var decryptor = new Decryptor(Context, sk);
                 var noiseBudget = decryptor.InvariantNoiseBudget(ct);
                 if (noiseBudget <= 0)
                     throw NewRpcException(StatusCode.DataLoss,
@@ -161,45 +158,44 @@ namespace Server.Services
                 decryptor.Decrypt(ct, p);
                 return new DecryptionResult
                 {
-                    Plaintext = new PlaintextData {Data = _encoder.DecodeInt64(p)},
+                    Plaintext = new PlaintextData {Data = Encoder.DecodeInt64(p)},
                     NoiseBudget = noiseBudget
                 };
             });
         }
 
-        ////////
+        #endregion
 
-        public static Task<CiphertextId> ParseCiphertext(SerializedCiphertext sc) =>
-            Task.Run(() =>
-            {
-                AssertContext();
-                var ct = DeserializeCiphertext(_context, sc.Data);
-                var hash = ct.GetHashCode();
-                CiphertextMap[hash] = ct;
-                return new CiphertextId {HashCode = hash};
-            });
+        #region Generator
+
+        public static Task<CiphertextId> ParseCiphertext(SerializedCiphertext sc) => SafeRun(() =>
+        {
+            AssertContext();
+            var ct = DeserializeCiphertext(Context, sc.Data);
+            var hash = ct.GetHashCode();
+            Ciphertexts[hash] = ct;
+            return new CiphertextId {HashCode = hash};
+        });
 
         public override Task<CiphertextId> ParseCiphertext(SerializedCiphertext request, ServerCallContext context) =>
             ParseCiphertext(request);
 
         public override Task<PlaintextId> MakePlaintext(PlaintextData request, ServerCallContext context) =>
-            Task.Run(() =>
+            SafeRun(() =>
             {
                 AssertContext();
-                var p = _encoder.Encode(request.Data);
+                var p = Encoder.Encode(request.Data);
                 var id = p.GetHashCode();
-                PlaintextMap[id] = p;
+                Plaintexts[id] = p;
                 return new PlaintextId {HashCode = id};
             });
 
-        ////////
-
-        public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context) => Task.Run(() =>
+        public override Task<KeyPair> KeyGen(Nothing request, ServerCallContext context) => SafeRun(() =>
         {
             AssertContext();
-            var kp = new KeyGenerator(_context);
+            var kp = new KeyGenerator(Context);
             var hash = kp.GetHashCode();
-            _keyPairMap[hash] = kp;
+            KeyPairs[hash] = kp;
             var kpId = new KeyPairId {HashCode = hash};
 
             var pkStream = new MemoryStream((int) kp.PublicKey.SaveSize(CompressionMode));
@@ -213,20 +209,33 @@ namespace Server.Services
             return new KeyPair {Id = kpId, PublicKey = ToByteString(pkStream), SecretKey = ToByteString(skStream)};
         });
 
+        #endregion
+
         private static void AssertContext(string operation = "access")
         {
-            if (_context == null || _contextParameters == null || _encoder == null)
+            if (Context == null || ContextParametersStream == null || Encoder == null)
                 throw NewRpcException(StatusCode.FailedPrecondition,
                     $"cannot {operation} BfvContext before Restore or Create one. try to Create or Restore first");
         }
 
-        internal static SEALContext GetContext() => _context;
-        internal static IntegerEncoder GetIntegerEncoder() => _encoder;
-        internal static Ciphertext GetCiphertext(CiphertextId id) => CiphertextMap[id.HashCode];
-        internal static Plaintext GetPlaintext(PlaintextId id) => PlaintextMap[id.HashCode];
+        internal static SEALContext GetContext() => Context;
+        internal static IntegerEncoder GetIntegerEncoder() => Encoder;
+        internal static Ciphertext GetCiphertext(CiphertextId id) => Ciphertexts[id.HashCode];
+        internal static Plaintext GetPlaintext(PlaintextId id) => Plaintexts[id.HashCode];
 
         private const ComprModeType CompressionMode = Serializer.CompressionMode;
         private readonly ILogger<BfvContextService> _logger;
         public BfvContextService(ILogger<BfvContextService> logger) => _logger = logger;
+    }
+
+    internal static class ContextParametersHolder
+    {
+        internal static SEALContext Context;
+        internal static Stream ContextParametersStream;
+        internal static IntegerEncoder Encoder;
+
+        internal static readonly Dictionary<int, Ciphertext> Ciphertexts = new Dictionary<int, Ciphertext>();
+        internal static readonly Dictionary<int, Plaintext> Plaintexts = new Dictionary<int, Plaintext>();
+        internal static readonly Dictionary<int, KeyGenerator> KeyPairs = new Dictionary<int, KeyGenerator>();
     }
 }

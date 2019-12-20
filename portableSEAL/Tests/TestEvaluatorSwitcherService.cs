@@ -47,7 +47,7 @@ namespace Tests
             await _evaluator.Sub(NewPlaintextData(2), _mockContext);
             await _evaluator.Multiply(NewPlaintextData(3), _mockContext);
             await _evaluator.Add(NewPlaintextData(4), _mockContext); // part: 3 * (x - 2) + 4 || on 0
-            await EvaluatorCurrentPlain(true, header: "1", sw: sw);
+            await EvaluatorCurrentPlain(true, header: "1 computed", sw: sw);
             var t = await _evaluator.GetId(_nothing, _mockContext);
 
             await _switcher.Previous(_nothing, _mockContext);

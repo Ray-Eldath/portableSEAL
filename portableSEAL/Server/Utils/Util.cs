@@ -10,14 +10,30 @@ namespace Server.Utils
     {
         private static readonly Nothing Nothing = new Nothing();
 
-        public static Task<Nothing> RunNothing(Action action) => Task.Run(() =>
-        {
-            action.Invoke();
-            return Nothing;
-        });
+        public static Task<Nothing> SafeRunNothing(Action action) =>
+            SafeRun(() =>
+            {
+                action.Invoke();
+                return Nothing;
+            });
 
-        public static RpcException NewRpcException(StatusCode statusCode, string reason) =>
-            new RpcException(new Status(statusCode, ""), reason);
+        public static Task<T> SafeRunAsync<T>(Func<Task<T>> action, StatusCode failedCode = StatusCode.Internal) =>
+            SafeRun(() => action.Invoke().Result, failedCode);
+
+        public static Task<T> SafeRun<T>(Func<T> action, StatusCode failedCode = StatusCode.Internal)
+        {
+            try
+            {
+                return Task.Run(action.Invoke);
+            }
+            catch (Exception e)
+            {
+                throw NewRpcException(failedCode, e.Message);
+            }
+        }
+
+        public static RpcException NewRpcException(StatusCode code, string reason) =>
+            new RpcException(new Status(code, reason), reason);
 
         public static string ToSizeString(long bytes)
         {

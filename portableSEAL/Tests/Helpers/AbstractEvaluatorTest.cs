@@ -47,8 +47,7 @@ namespace Tests.Helpers
             return rp;
         });
 
-        protected Task<SerializedCiphertext> ConstructEvaluator
-            (long initial, bool createEvaluator = true) => Task.Run(async () =>
+        protected async Task<SerializedCiphertext> ConstructEvaluator(long initial, bool createEvaluator = true)
         {
             var ct = await GetContext().Encrypt(
                 new EncryptionNecessity
@@ -58,12 +57,11 @@ namespace Tests.Helpers
                 }, _mockContext);
             if (!createEvaluator) return ct;
 
-            await GetEvaluator().Create(await GetContext().ParseCiphertext(ct, _mockContext),
-                _mockContext); // TODO: combine two operation into a new operation maybe...?
+            await GetEvaluator().Construct(ct, _mockContext);
             Console.WriteLine("---evaluator created");
 
             return ct;
-        });
+        }
 
         protected static BinaryOperand NewPlaintextData(long d) =>
             new BinaryOperand {PlaintextData = new PlaintextData {Data = d}};

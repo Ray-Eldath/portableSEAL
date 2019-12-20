@@ -25,6 +25,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
 
+    // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api
+    testCompile group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.5.2'
+
     implementation "com.github.marcoferrer.krotoplus:kroto-plus-coroutines:$krotoPlusVersion"
 //    implementation "com.google.protobuf:protobuf-java:$protobufVersion"
 //    implementation "com.google.api.grpc:proto-google-common-protos:1.17.0"
@@ -33,6 +36,10 @@ dependencies {
     implementation "io.grpc:grpc-stub:$grpcVersion"
 
     implementation files("../proto/build/libs/portableSEAL.proto-1.0-SNAPSHOT.jar")
+}
+
+test {
+    useJUnitPlatform()
 }
 
 [compileKotlin, compileTestKotlin].forEach { it.kotlinOptions.jvmTarget = "11" }

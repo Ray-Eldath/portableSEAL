@@ -6,61 +6,66 @@ using Microsoft.Extensions.Logging;
 using portableSEAL.Services;
 using portableSEAL.Services.Switcher;
 using static Server.Utils.Util;
+using static Server.Services.Switcher.SwitcherParameterHolder;
 
 namespace Server.Services.Switcher
 {
     public class EvaluatorSwitcherService : EvaluatorSwitcher.EvaluatorSwitcherBase
     {
-        private readonly List<EvaluatorDelegation> _evaluators = new List<EvaluatorDelegation>();
-        private int _current = -1;
-
-        public override Task<Nothing> Clear(Nothing request, ServerCallContext context) => RunNothing(() =>
+        public override Task<Nothing> Clear(Nothing request, ServerCallContext context) => SafeRunNothing(() =>
         {
-            _current = -1;
-            _evaluators.Clear();
+            Current = -1;
+            Evaluators.ForEach(e => e.Destroy(request, context));
+            Evaluators.Clear();
         });
 
         public override Task<Position> ConstructNew(SerializedCiphertext request, ServerCallContext context) =>
             AddNew(BfvContextService.ParseCiphertext(request).Result, context);
 
-        private Task<Position> AddNew(CiphertextId request, ServerCallContext context) => Task.Run(async () =>
+        private Task<Position> AddNew(CiphertextId request, ServerCallContext context) => SafeRunAsync(async () =>
         {
             var evaluator = new EvaluatorDelegation(_logger);
             await evaluator.Create(request, context);
 
-            _evaluators.Add(evaluator);
-            ++_current;
+            Evaluators.Add(evaluator);
+            ++Current;
             // Console.WriteLine(_current + ": " + GetElementAtOrThrow(_current).GetHashCode());
-            EvaluatorService.SetDelegation(GetElementAtOrThrow(_current));
-            return new Position {Pos = _current};
+            EvaluatorService.SetDelegation(GetElementAtOrThrow(Current));
+            return new Position {Pos = Current};
         });
 
-        public override Task<Position> Next(Nothing request, ServerCallContext context) => Task.Run(() =>
+        public override Task<Position> Next(Nothing request, ServerCallContext context) => SafeRun(() =>
         {
-            EvaluatorService.SetDelegation(GetElementAtOrThrow(++_current));
+            EvaluatorService.SetDelegation(GetElementAtOrThrow(++Current));
             // Console.WriteLine("now: {0}", _current);
-            return new Position {Pos = _current};
+            return new Position {Pos = Current};
         });
 
-        public override Task<Position> Previous(Nothing request, ServerCallContext context) => Task.Run(() =>
+        public override Task<Position> Previous(Nothing request, ServerCallContext context) => SafeRun(() =>
         {
-            EvaluatorService.SetDelegation(GetElementAtOrThrow(--_current));
+            EvaluatorService.SetDelegation(GetElementAtOrThrow(--Current));
             // Console.WriteLine("now: {0}", _current);
-            return new Position {Pos = _current};
+            return new Position {Pos = Current};
         });
 
-        public override Task<Nothing> At(Position request, ServerCallContext context) => RunNothing(() =>
+        public override Task<Nothing> At(Position request, ServerCallContext context) => SafeRunNothing(() =>
             EvaluatorService.SetDelegation(GetElementAtOrThrow(request.Pos)));
 
         private EvaluatorDelegation GetElementAtOrThrow(int pos)
         {
-            if (pos < 0 || pos > _evaluators.Count - 1 || _evaluators.ElementAt(pos) == null)
+            if (pos < 0 || pos > Evaluators.Count - 1 || Evaluators.ElementAt(pos) == null)
                 throw NewRpcException(StatusCode.NotFound,
                     $"invalid or nonexistent Evaluator at position {pos}. check your parameter or AddNew?");
-            return _evaluators[pos];
+            return Evaluators[pos];
         }
 
         private readonly ILogger<EvaluatorService> _logger;
         public EvaluatorSwitcherService(ILogger<EvaluatorService> logger) => _logger = logger;
+    }
+
+    internal static class SwitcherParameterHolder
+    {
+        internal static readonly List<EvaluatorDelegation> Evaluators = new List<EvaluatorDelegation>();
+        internal static int Current = -1;
     }
 }

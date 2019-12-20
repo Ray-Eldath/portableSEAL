@@ -22,7 +22,7 @@
         <e p="appsettings.json" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
         <e p="obj" t="ExcludeRecursive">
-          <e p="Debug" t="Include">
+          <e p="Release" t="Include">
             <e p="netcoreapp3.0" t="Include">
               <e p="Context.cs" t="Include" />
               <e p="ContextGrpc.cs" t="Include" />
@@ -66,7 +66,7 @@
           <e p="MockCallContext.cs" t="Include" />
         </e>
         <e p="obj" t="ExcludeRecursive">
-          <e p="Debug" t="Include">
+          <e p="Release" t="Include">
             <e p="netcoreapp3.0" t="Include">
               <e p="Tests.AssemblyInfo.cs" t="Include" />
             </e>

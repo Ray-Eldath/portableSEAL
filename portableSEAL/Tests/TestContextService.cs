@@ -46,8 +46,8 @@ namespace Tests
 
         [Test]
         [TearDown]
-        public void TestDestroy() =>
-            Assert.DoesNotThrow(() => { _service.Destroy(_nothing, _mockContext); });
+        public void TestClear() =>
+            Assert.DoesNotThrow(() => { _service.Clear(_nothing, _mockContext); });
 
         [Test]
         public void TestKeyGen() =>

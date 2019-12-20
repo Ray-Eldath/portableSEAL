@@ -12,6 +12,7 @@ import "id.proto";
 service Evaluator {
     rpc Create (CiphertextId) returns (Nothing) {}
     rpc Construct (SerializedCiphertext) returns (Nothing) {}
+    rpc Destroy (Nothing) returns (Nothing) {}
     
     rpc GetId (Nothing) returns (CiphertextId) {}
     rpc Current (Nothing) returns (SerializedCiphertext) {}

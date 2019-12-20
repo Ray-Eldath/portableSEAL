@@ -13,18 +13,13 @@ service BfvContext {
     rpc Create (ContextParameters) returns (ContextId) {}
     rpc Restore (SerializedContext) returns (ContextId) {}
     rpc Export (Nothing) returns (SerializedContext) {}
+    rpc Clear (Nothing) returns (Nothing) {}
 
     rpc Encrypt (EncryptionNecessity) returns (SerializedCiphertext) {}
     rpc Decrypt (DecryptionNecessity) returns (DecryptionResult) {}
 
     rpc ParseCiphertext (SerializedCiphertext) returns (CiphertextId) {}
-
     rpc MakePlaintext (PlaintextData) returns (PlaintextId) {}
-
-    rpc Destroy (Nothing) returns (Nothing) {}
-    
-    //
-    
     rpc KeyGen (Nothing) returns (KeyPair) {}
 }
 // @formatter:on

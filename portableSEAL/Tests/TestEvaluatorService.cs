@@ -14,7 +14,7 @@ namespace Tests
 {
     [ExcludeFromCodeCoverage]
     [Author("Ray Eldath")]
-    [TestFixture(TestName = "test arithmetical operations, relinearize and straight polynomial computation")]
+    [TestFixture(TestName = "test arithmetical operations and straight polynomial computation")]
     public class TestEvaluatorService : AbstractEvaluatorTest
     {
         private readonly EvaluatorService _evaluator = new EvaluatorService(new NullLogger<EvaluatorService>());
@@ -22,8 +22,8 @@ namespace Tests
         private KeyPair _keyPair;
 
         [Test, Description("evaluate \"straight\" polynomial r( x^2 + x + 4 )")]
-        public void TestRelinearizedStraightPolynomial(
-            [Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
+        public void TestRelinearizedStraightPolynomial
+            ([Random(SafeMin, SafeMax, 3)] long l) => Assert.DoesNotThrowAsync(async () =>
         {
             var sw = new Stopwatch();
             await _context.Create(new ContextParameters
@@ -112,11 +112,13 @@ namespace Tests
 
         //////
 
+        [Test]
         [TearDown]
-        public Task TearDownTest() => _context.Destroy(_nothing, _mockContext);
+        public void TearDownTest() => Assert.DoesNotThrowAsync(() => _context.Clear(_nothing, _mockContext));
 
+        [Test]
         [SetUp]
-        public Task SetUpTest() => Task.Run(async () =>
+        public void SetUpTest() => Assert.DoesNotThrowAsync(async () =>
         {
             await _context.Create(
                 new ContextParameters {PlainModulusNumber = 512, PolyModulusDegree = 1024}, _mockContext);
