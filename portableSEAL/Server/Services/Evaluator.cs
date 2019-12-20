@@ -140,11 +140,7 @@ namespace Server.Services
 
         private readonly ILogger<EvaluatorService> _logger;
 
-        public EvaluatorDelegation(ILogger<EvaluatorService> logger)
-        {
-            _logger = logger;
-            Console.Error.WriteLine("evaluator delegation created.");
-        }
+        public EvaluatorDelegation(ILogger<EvaluatorService> logger) => _logger = logger;
     }
 
     public class EvaluatorService : Evaluator.EvaluatorBase

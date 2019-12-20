@@ -1,1 +1,1 @@
-cloc .\portableSEAL\Tests\**\*.cs .\portableSEAL\Server\**\*.cs .\proto\src .\proto\*.gradle
+cloc --vcs=git --include-lang="C#,Kotlin,Protobuf Buffers,Gradle,MSBuild script"
