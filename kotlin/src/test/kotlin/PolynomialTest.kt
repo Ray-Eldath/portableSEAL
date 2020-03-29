@@ -29,8 +29,8 @@ class PolynomialTest {
     @ParameterizedTest
     @ArgumentsSource(SafeLongProvider::class)
     fun evaluate(l: Long): Unit = runBlocking {
-        val excepted = l * l + 3 * (l - 2) + 4
-        println("%d^2 + 3 * (%d - 2) + 4: should be %d".format(l, l, excepted))
+        val expected = l * l + 3 * (l - 2) + 4
+        println("%d^2 + 3 * (%d - 2) + 4: should be %d".format(l, l, expected))
 
         val sw = Stopwatch.createStarted()
 
@@ -58,7 +58,7 @@ class PolynomialTest {
 
         sw.stop()
 
-        assertEquals(excepted, evaluatorCurrentPlain(header = "result", sw = sw))
+        assertEquals(expected, evaluatorCurrentPlain(header = "result", sw = sw))
     }.ignore()
 
     @BeforeEach
