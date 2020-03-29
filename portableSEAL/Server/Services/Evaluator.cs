@@ -33,7 +33,7 @@ namespace Server.Services
         // 仿照 EvaluatorSwitcher 中使用 Result 的模式改为现在这个样子，测试通过。
         // 一点侥幸的是当时 EvaluatorSwitcher 用 Result 完全就是 “更好看”，根本没有多想......
         // 
-        // 明显是由于自己对协程理解不够导致的问题...... 今后要多学习基础知识。少弄些fancy玩意。
+        // 明显是由于自己对协程理解不够导致的问题...... 今后要多学习基础知识。少弄些垃圾玩意。
         // 谨以此为戒。
         // 
         // Ray Eldath.

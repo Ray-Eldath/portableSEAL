@@ -11,10 +11,9 @@
     <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\nunit.engine.dll" t="Include" />
     <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\NUnit3.TestAdapter.dll" t="Include" />
     <e p="C:\Users\Ray Eldath\.nuget\packages\nunit3testadapter\3.15.1\build\netcoreapp2.0\NUnit3.TestAdapter.pdb" t="Include" />
-    <e p="C:\Users\Ray Eldath\.Rider2019.3\config\scratches" t="IncludeRecursive" />
     <e p="C:\Users\Ray Eldath\.Rider2019.3\system\extResources" t="IncludeRecursive" />
-    <e p="C:\Users\Ray Eldath\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_portableSEAL.-186385553.00" t="ExcludeRecursive" />
-    <e p="C:\Users\Ray Eldath\RiderProjects\portableSEAL\portableSEAL" t="IncludeFlat">
+    <e p="C:\Users\Ray Eldath\.Rider2019.3\system\resharper-host\local\Transient\ReSharperHost\v193\SolutionCaches\_portableSEAL.961948930.00" t="ExcludeRecursive" />
+    <e p="C:\Users\Ray Eldath\IdeaProjects\portableSEAL\portableSEAL" t="IncludeFlat">
       <e p="packages" t="ExcludeRecursive" />
       <e p="portableSEAL.sln" t="IncludeFlat" />
       <e p="Server" t="IncludeRecursive">
@@ -22,7 +21,7 @@
         <e p="appsettings.json" t="Include" />
         <e p="bin" t="ExcludeRecursive" />
         <e p="obj" t="ExcludeRecursive">
-          <e p="Release" t="Include">
+          <e p="Debug" t="Include">
             <e p="netcoreapp3.0" t="Include">
               <e p="Context.cs" t="Include" />
               <e p="ContextGrpc.cs" t="Include" />
@@ -66,7 +65,7 @@
           <e p="MockCallContext.cs" t="Include" />
         </e>
         <e p="obj" t="ExcludeRecursive">
-          <e p="Release" t="Include">
+          <e p="Debug" t="Include">
             <e p="netcoreapp3.0" t="Include">
               <e p="Tests.AssemblyInfo.cs" t="Include" />
             </e>
@@ -78,7 +77,7 @@
         <e p="Tests.csproj" t="IncludeRecursive" />
       </e>
     </e>
-    <e p="C:\Users\Ray Eldath\RiderProjects\portableSEAL\proto\src\main\proto" t="Include">
+    <e p="C:\Users\Ray Eldath\IdeaProjects\portableSEAL\proto\src\main\proto" t="Include">
       <e p="context.proto" t="Include" />
       <e p="evaluator.proto" t="Include" />
       <e p="id.proto" t="Include" />
