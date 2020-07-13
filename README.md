@@ -30,7 +30,7 @@ plaintext noise budget: 15
 EvaluatorCurrentPlain: 2707015688272295738    ||  ciphertext size: 46.45 KB
 ```
 
-# portableSEAL [![Build Status](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Factions-badge.atrox.dev%2FRay-Eldath%2FportableSEAL%2Fbadge%3Ftoken%3Df3396308a52693fa4bd3cf92ece957e1e749a06f%2B&style=flat-square)](https://actions-badge.atrox.dev/Ray-Eldath/portableSEAL/goto?token=f3396308a52693fa4bd3cf92ece957e1e749a06f+)
+# portableSEAL [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Ray-Eldath/portableSEAL/Server%20-%20.NET%20Core?style=flat-square)](https://github.com/Ray-Eldath/portableSEAL/actions?query=workflow%3A%22Server+-+.NET+Core%22)
 
 gRPC binding for [Microsoft SEAL](https://github.com/microsoft/SEAL).
 
